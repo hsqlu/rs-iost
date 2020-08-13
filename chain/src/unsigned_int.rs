@@ -91,34 +91,3 @@ impl core::fmt::Display for UnsignedInt {
         write!(f, "{}", self.0)
     }
 }
-
-//macro_rules! write_read_tests {
-//    ($($i:ident, $v:expr, $n:expr)*) => ($(
-//        #[cfg(test)]
-//        #[test]
-//        fn $i() {
-//            let mut bytes = [0_u8; 10];
-//            let mut write_pos = 0;
-//            let varint: UnsignedInt = $v.into();
-//            assert_eq!(varint.num_bytes(), $n);
-//
-//            varint.write(&mut bytes, &mut write_pos).unwrap();
-//            assert_eq!(write_pos, $n);
-//            let mut read_pos = 0;
-//            let result = UnsignedInt::read(&bytes, &mut read_pos).unwrap();
-//            assert_eq!(result, varint);
-//            assert_eq!(read_pos, write_pos);
-//        }
-//    )*)
-//}
-//
-//write_read_tests! {
-//    read_write_1, 1_u32, 1
-//    read_write_50, 50_u32, 1
-//    read_write_u8_min, u8::min_value(), 1
-//    read_write_u8_max, u8::max_value(), 2
-//    read_write_u16_min, u16::min_value(), 1
-//    read_write_u16_max, u16::max_value(), 3
-//    read_write_u32_min, u32::min_value(), 1
-//    read_write_u32_max, u32::max_value(), 5
-//}

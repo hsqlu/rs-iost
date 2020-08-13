@@ -6,7 +6,7 @@ use crate::{NumberBytes, Read, SerializeData, Write};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, Debug, NumberBytes, Read, Write)]
+#[derive(Clone, Default, Debug, NumberBytes, Read, Write, SerializeData)]
 #[cfg_attr(feature = "std", derive(Serialize))]
 #[iost_root_path = "crate"]
 pub struct AmountLimit {
@@ -59,16 +59,8 @@ impl<'de> serde::Deserialize<'de> for AmountLimit {
     }
 }
 
-// impl AmountLimit {
-//     #[cfg(feature = "std")]
-//     pub fn to_bytes(&self) -> Vec<u8> {
-//         let mut result = bytebuffer::ByteBuffer::new();
-//         let mut token = self.token.clone();
-//         let mut value = self.value.clone();
-//
-//         result.write(token.as_bytes());
-//         result.write(value.as_bytes());
-//         // unsafe { result.write(value.as_bytes_mut()) }
-//         result
-//     }
-// }
+impl AmountLimit {
+    pub fn new(token: String, value: String) -> Self {
+        AmountLimit { token, value }
+    }
+}

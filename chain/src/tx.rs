@@ -9,6 +9,7 @@ use chrono::{SecondsFormat, TimeZone, Utc};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
+use std::slice::Iter;
 
 #[derive(Clone, Default, Debug)]
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
@@ -44,68 +45,64 @@ impl NumberBytes for Tx {
     #[inline]
     fn num_bytes(&self) -> usize {
         48 + self.signers.num_bytes()
+            + self.signers.len() * 4
             + self.actions.num_bytes()
+            + self.actions.len() * 4
             + self.amount_limit.num_bytes()
+            + self.amount_limit.len() * 4
             + self.signatures.num_bytes()
+            + self.signatures.len() * 4
     }
 }
 
 impl Read for Tx {
     #[inline]
     fn read(bytes: &[u8], pos: &mut usize) -> Result<Self, ReadError> {
-        let time_bits = i64::read(bytes, pos)?;
-        let time = i64::from(time_bits);
-        let expiration_bits = i64::read(bytes, pos)?;
-        let expiration = i64::from(expiration_bits);
-        let gas_ratio_bits = f64::read(bytes, pos)?;
-        let gas_ratio = f64::from(gas_ratio_bits) / 100.0;
-        let gas_limit_bits = f64::read(bytes, pos)?;
-        let gas_limit = f64::from(gas_limit_bits) / 100.0;
-        let delay_bits = i64::read(bytes, pos)?;
-        let delay = i64::from(delay_bits);
-        let chain_id_bits = u32::read(bytes, pos)?;
-        let chain_id = u32::from(chain_id_bits);
-        let signers_capacity = usize::read(bytes, pos)?;
-        let mut signers = Vec::new();
-        signers.resize(signers_capacity, String::default());
+        let time = i64::read(bytes, pos)?;
+        let expiration = i64::read(bytes, pos)?;
+        let gas_ratio = f64::read(bytes, pos)?;
+        let gas_limit = f64::read(bytes, pos)?;
+        let delay = i64::read(bytes, pos)?;
+        let chain_id = u32::read(bytes, pos)?;
 
+        // reserved field, default len 0 for now.
+        let _reserved = i32::read(bytes, pos)?;
+
+        let signers_capacity = usize::read(bytes, pos)?;
+        let mut signers: Vec<String> = Vec::new();
+        signers.resize(signers_capacity, String::default());
         for item in &mut signers {
+            let _size = usize::read(bytes, pos)?;
             let r = String::read(bytes, pos)?;
             *item = r;
         }
 
         let actions_capacity = usize::read(bytes, pos)?;
-        let mut actions = Vec::new();
+        let mut actions: Vec<Action> = Vec::new();
         actions.resize(actions_capacity, Action::default());
 
         for item in &mut actions {
-            let r = Action::read(bytes, pos)?;
-            *item = r;
-        }
-
-        let actions_capacity = usize::read(bytes, pos)?;
-        let mut actions = Vec::new();
-        actions.resize(actions_capacity, Action::default());
-
-        for item in &mut actions {
+            let _size = usize::read(bytes, pos)?;
             let r = Action::read(bytes, pos)?;
             *item = r;
         }
 
         let amount_limits_capacity = usize::read(bytes, pos)?;
-        let mut amount_limit = Vec::new();
+        let mut amount_limit: Vec<AmountLimit> = Vec::new();
         amount_limit.resize(amount_limits_capacity, AmountLimit::default());
 
         for item in &mut amount_limit {
+            let _size = usize::read(bytes, pos)?;
             let r = AmountLimit::read(bytes, pos)?;
             *item = r;
         }
 
         let signatures_capacity = usize::read(bytes, pos)?;
-        let mut signatures = Vec::new();
+        let mut signatures: Vec<Signature> = Vec::new();
         signatures.resize(signatures_capacity, Signature::default());
 
         for item in &mut signatures {
+            let _size = usize::read(bytes, pos)?;
             let r = Signature::read(bytes, pos)?;
             *item = r;
         }
@@ -131,8 +128,6 @@ impl Write for Tx {
     #[inline]
     fn write(&self, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError> {
         self.time.clone().write(bytes, pos);
-        // let mut time: i64 = self.time;
-        // time.write(bytes, pos);
         self.expiration.clone().write(bytes, pos);
         let mut ratio = (self.gas_ratio * 100.0) as i64;
         ratio.write(bytes, pos);
@@ -140,12 +135,30 @@ impl Write for Tx {
         limit.write(bytes, pos);
         self.delay.clone().write(bytes, pos);
         self.chain_id.clone().write(bytes, pos);
-        0u32.write(bytes, pos);
-        self.signers.as_slice().write(bytes, pos);
-        self.actions.as_slice().write(bytes, pos);
-        self.amount_limit.as_slice().write(bytes, pos);
-        self.signatures.as_slice().write(bytes, pos)
+
+        // reserved field
+        0_i32.write(bytes, pos);
+
+        self.signers.len().write(bytes, pos)?;
+        expand::<String>(self.signers.iter(), bytes, pos);
+        self.actions.len().write(bytes, pos);
+        expand::<Action>(self.actions.iter(), bytes, pos);
+        self.amount_limit.len().write(bytes, pos);
+        expand::<AmountLimit>(self.amount_limit.iter(), bytes, pos);
+        self.signatures.len().write(bytes, pos);
+        expand::<Signature>(self.signatures.iter(), bytes, pos)
     }
+}
+
+fn expand<T>(x: Iter<T>, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError>
+where
+    T: NumberBytes + Write,
+{
+    for item in x {
+        item.num_bytes().write(bytes, pos)?;
+        item.write(bytes, pos)?;
+    }
+    Ok(())
 }
 
 impl SerializeData for Tx {
@@ -240,7 +253,6 @@ impl Tx {
 
 #[cfg(test)]
 mod test {
-
     use super::*;
 
     #[test]
