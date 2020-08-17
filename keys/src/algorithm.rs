@@ -1,6 +1,6 @@
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-use ed25519_dalek::Signer;
+use ed25519_dalek::{Signer, Verifier};
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]
 use rand::thread_rng;
@@ -33,12 +33,15 @@ pub fn new(algorithm_name: &str) -> Box<dyn Algorithm> {
 impl Algorithm for AlgorithmEd25519 {
     fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
         let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
-        let signature: ed25519_dalek::Signature = key_pair.sign(message);
+        let signature = key_pair.sign(message);
         signature.to_bytes().to_vec()
     }
 
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
-        unimplemented!()
+        let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
+        // let signature: [u8; 64] = signature[..64].into();
+        let sig = signature::Signature::from_bytes(signature).unwrap();
+        public_key.verify(message, &sig).is_ok()
     }
 
     fn gen_sec_key(&self) -> Vec<u8> {
@@ -53,7 +56,7 @@ impl Algorithm for AlgorithmEd25519 {
     }
 
     fn check(&self, sec_key: &[u8]) -> crate::Result<()> {
-        Ok(())
+        unimplemented!()
     }
 }
 
@@ -67,7 +70,10 @@ impl Algorithm for AlgorithmSecp256k1 {
     }
 
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
-        unimplemented!()
+        let msg = secp256k1::Message::parse_slice(message).unwrap();
+        let sig = secp256k1::Signature::parse_slice(signature).unwrap();
+        let public_key = secp256k1::PublicKey::parse_slice(pub_key, None).unwrap();
+        secp256k1::verify(&msg, &sig, &public_key)
     }
 
     fn gen_sec_key(&self) -> Vec<u8> {
@@ -101,7 +107,7 @@ mod test {
             ("1rANSfcRzr4HkhbUFZ7L1Zp69JZZHiDDq5v7dNSbbEqeU4jxy3fszV4HGiaLQEyqVpS1dKT9g7zCVRxBVzuiUzB", "6sNQa7PV2SFzqCBtQUcQYJGGoU7XaB6R4xuCQVXNZe6b"),
         ];
 
-        let ed25519 = super::new("ed25519");
+        let ed25519 = super::new(ED25519);
 
         for (hashed_code, expected) in cases {
             let sk = hashed_code.from_base58().unwrap();
@@ -115,7 +121,7 @@ mod test {
             "lDS+SdM+aiVHbDyXapvrsgyKxFg9mJuHWPZb/INBRWY=",
             base64::encode(to_encode_pub_key)
         );
-        let secp256k1 = super::new("secp256k1");
+        let secp256k1 = super::new(SECP256K1);
 
         let sk = "3BZ3HWs2nWucCCvLp7FRFv1K7RR3fAjjEQccf9EJrTv4"
             .from_base58()

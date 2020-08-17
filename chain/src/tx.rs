@@ -375,6 +375,7 @@ mod test {
         );
         // let tx_string = serde_json::to_string_pretty(&tx).unwrap();
         // dbg!(&tx_string);
+        assert!(tx.verify());
 
         let tx_str = r#"
         {

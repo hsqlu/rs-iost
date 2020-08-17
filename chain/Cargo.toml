@@ -13,7 +13,7 @@ chrono = { version = "0.4.10", default-features = false }
 crypto = { version = "0.0.2", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
 digest = { version = "0.8.1", default-features = false }
-ed25519 = { version = "0.2.0", default-features = false }
+#ed25519-dalek = { version = "1.0.0-pre.3" }
 hex = { version = "0.4", default-features = false }
 iost-derive = { path ="../iost-derive" }
 itoa = { version = "0.4.4", default-features = false }

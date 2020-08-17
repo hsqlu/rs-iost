@@ -14,9 +14,9 @@ checksum = "cff77d8686867eceff3105329d4698d96c2391c176d5d03adc90c7389162b5b8"
 
 [[package]]
 name = "async-trait"
-version = "0.1.36"
+version = "0.1.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a265e3abeffdce30b2e26b7a11b222fe37c6067404001b434101457d0385eb92"
+checksum = "caae68055714ff28740f310927e04f2eba76ff580b16fb18ed90073ee71646f7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -104,9 +104,9 @@ checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
 name = "chrono"
-version = "0.4.13"
+version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c74d84029116787153e02106bf53e66828452a4b325cc8652b788b5967c0a0b6"
+checksum = "942f72db697d8767c22d46a598e01f2d3b475501ea43d0db4f16d90259182d0b"
 dependencies = [
  "num-integer",
  "num-traits",
@@ -159,20 +159,11 @@ dependencies = [
 
 [[package]]
 name = "ed25519"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdd4f7ef77fea914346157eb9090865349fc396f93271d792ca210c394aee01b"
-dependencies = [
- "signature 0.3.0",
-]
-
-[[package]]
-name = "ed25519"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf038a7b6fd7ef78ad3348b63f3a17550877b0e28f8d68bcc94894d1412158bc"
 dependencies = [
- "signature 1.2.2",
+ "signature",
 ]
 
 [[package]]
@@ -182,7 +173,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21a8a37f4e8b35af971e6db5e3897e7a6344caa3f92f6544f88125a1f5f0035a"
 dependencies = [
  "curve25519-dalek",
- "ed25519 1.0.1",
+ "ed25519",
  "rand",
  "serde",
  "sha2",
@@ -259,7 +250,6 @@ dependencies = [
  "chrono",
  "crypto",
  "digest",
- "ed25519 0.2.0",
  "hex",
  "iost-derive",
  "iost-keys",
@@ -291,6 +281,7 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "rand",
+ "signature",
 ]
 
 [[package]]
@@ -517,12 +508,6 @@ dependencies = [
  "keccak",
  "opaque-debug",
 ]
-
-[[package]]
-name = "signature"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4a5e37049d50ec8878c63cd6e91cc2f41073d49f29a1b038eede1500116557b"
 
 [[package]]
 name = "signature"
