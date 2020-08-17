@@ -36,6 +36,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5024ee8015f02155eee35c711107ddd9a9bf3cb689cf2a9089c97e79b6e1ae83"
 
 [[package]]
+name = "base64"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
+
+[[package]]
 name = "bitcoin_hashes"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -248,6 +254,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "base58",
+ "base64",
  "byteorder",
  "chrono",
  "crypto",
@@ -277,6 +284,7 @@ name = "iost-keys"
 version = "0.1.0"
 dependencies = [
  "base58",
+ "base64",
  "bitcoin_hashes",
  "byteorder",
  "ed25519-dalek",

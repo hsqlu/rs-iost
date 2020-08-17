@@ -1,11 +1,12 @@
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
+use ed25519_dalek::Signer;
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]
 use rand::thread_rng;
 
-pub const ED25519: &str = "ed25519";
-pub const SECP256K1: &str = "secp256k1";
+pub const ED25519: &str = "ED25519";
+pub const SECP256K1: &str = "SECP256K1";
 
 const ROOT_KEY: &'static str =
     "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1";
@@ -31,7 +32,9 @@ pub fn new(algorithm_name: &str) -> Box<dyn Algorithm> {
 
 impl Algorithm for AlgorithmEd25519 {
     fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
-        unimplemented!()
+        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
+        let signature: ed25519_dalek::Signature = key_pair.sign(message);
+        signature.to_bytes().to_vec()
     }
 
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
@@ -45,7 +48,7 @@ impl Algorithm for AlgorithmEd25519 {
     }
 
     fn get_pub_key(&self, sec_key: &[u8]) -> crate::Result<Vec<u8>> {
-        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).map_err(ErrorEd25519)?;
+        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
         Ok(Vec::from(key_pair.public.as_ref()))
     }
 
@@ -88,10 +91,11 @@ impl Algorithm for AlgorithmSecp256k1 {
 mod test {
     use super::*;
     use base58::{FromBase58, ToBase58};
+    use base64;
     use ed25519_dalek::Keypair;
 
     #[test]
-    fn it_works() {
+    fn algorithm_works_as_expect() {
         let cases = vec![
             ("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1", "Gcv8c2tH8qZrUYnKdEEdTtASsxivic2834MQW6mgxqto"),
             ("1rANSfcRzr4HkhbUFZ7L1Zp69JZZHiDDq5v7dNSbbEqeU4jxy3fszV4HGiaLQEyqVpS1dKT9g7zCVRxBVzuiUzB", "6sNQa7PV2SFzqCBtQUcQYJGGoU7XaB6R4xuCQVXNZe6b"),
@@ -105,7 +109,12 @@ mod test {
             let result = pub_key.to_base58();
             assert_eq!(result, expected.to_string());
         }
-
+        let encoded_sk = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
+        let to_encode_pub_key = ed25519.get_pub_key(encoded_sk.as_ref()).unwrap();
+        assert_eq!(
+            "lDS+SdM+aiVHbDyXapvrsgyKxFg9mJuHWPZb/INBRWY=",
+            base64::encode(to_encode_pub_key)
+        );
         let secp256k1 = super::new("secp256k1");
 
         let sk = "3BZ3HWs2nWucCCvLp7FRFv1K7RR3fAjjEQccf9EJrTv4"
@@ -113,6 +122,9 @@ mod test {
             .unwrap();
         let pub_key = secp256k1.get_pub_key(sk.as_ref()).unwrap();
         let result = pub_key.to_base58();
-        assert_eq!("iWgLQj3VTPN4dZnomuJMMCggv22LFw4nAkA6bmrVsmCo", result);
+        assert_eq!(
+            "iWgLQj3VTPN4dZnomuJMMCggv22LFw4nAkA6bmrVsmCo".to_string(),
+            result
+        );
     }
 }

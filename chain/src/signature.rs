@@ -3,6 +3,7 @@ use alloc::string::{String, ToString};
 
 use crate::{Error, NumberBytes, Read, Write};
 use core::str::FromStr;
+use keys::algorithm;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -19,26 +20,24 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn as_bytes(&self) -> &[u8] {
-        (&self.signature).as_bytes();
-        (&self.algorithm).as_bytes();
-        (&self.public_key).as_bytes()
+    pub fn sign(message: &[u8], sign_algorithm: &str, sec_key: &[u8]) -> crate::Result<Signature> {
+        let algorithm = algorithm::new(sign_algorithm);
+        let pub_key = algorithm.get_pub_key(sec_key).unwrap();
+        let result = algorithm.sign(message, sec_key);
+        Ok(Signature {
+            algorithm: sign_algorithm.to_string(),
+            signature: base64::encode(result),
+            public_key: base64::encode(pub_key),
+        })
     }
 
-    pub const fn to_bytes(&self) -> [u8; 65] {
-        self.to_bytes()
+    pub fn verify(&self, message: &[u8]) -> bool {
+        let algorithm = algorithm::new(self.algorithm.as_str());
+        let pub_key = base64::decode(self.public_key.as_str()).unwrap();
+        let sig = base64::decode(self.signature.as_str()).unwrap();
+        algorithm.verify(message, pub_key.as_slice(), sig.as_slice())
     }
 }
-//
-// #[cfg(feature = "std")]
-// impl Serialize for Signature {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         serializer.serialize_str(&self.algorithm)
-//     }
-// }
 
 #[cfg(feature = "std")]
 impl<'de> serde::Deserialize<'de> for Signature {

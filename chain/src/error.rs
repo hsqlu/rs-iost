@@ -18,4 +18,7 @@ pub enum Error {
     FixedParseAmountFormat(),
     FixedParseDivideByZero(),
     FixedParseDoubleDot(),
+
+    InvalidSignature(),
+    InvalidPublisherSignature(),
 }
