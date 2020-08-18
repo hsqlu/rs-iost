@@ -1,6 +1,8 @@
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-use ed25519_dalek::{Signer, Verifier};
+// #[cfg(feature = "std")]
+// use ed25519_dalek::{Signer, Verifier};
+#[cfg(feature = "std")]
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]
 use rand::thread_rng;
@@ -32,16 +34,19 @@ pub fn new(algorithm_name: &str) -> Box<dyn Algorithm> {
 
 impl Algorithm for AlgorithmEd25519 {
     fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
-        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
-        let signature = key_pair.sign(message);
-        signature.to_bytes().to_vec()
+        // let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
+        // let signature = key_pair.sign(message);
+        // signature.to_bytes().to_vec()
+        unimplemented!()
     }
 
+    #[cfg(feature = "std")]
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
-        let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
-        // let signature: [u8; 64] = signature[..64].into();
-        let sig = signature::Signature::from_bytes(signature).unwrap();
-        public_key.verify(message, &sig).is_ok()
+        // let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
+        // // let signature: [u8; 64] = signature[..64].into();
+        // let sig = signature::Signature::from_bytes(signature).unwrap();
+        // public_key.verify(message, &sig).is_ok()
+        unimplemented!()
     }
 
     fn gen_sec_key(&self) -> Vec<u8> {
@@ -76,6 +81,7 @@ impl Algorithm for AlgorithmSecp256k1 {
         secp256k1::verify(&msg, &sig, &public_key)
     }
 
+    #[cfg(feature = "std")]
     fn gen_sec_key(&self) -> Vec<u8> {
         let mut rng = thread_rng();
         let secret_key = secp256k1::SecretKey::random(&mut rng);
