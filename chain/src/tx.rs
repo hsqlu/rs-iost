@@ -6,7 +6,7 @@ use crate::Error::{BytesReadError, InvalidPublisherSignature, InvalidSignature};
 use crate::{
     Action, AmountLimit, NumberBytes, Read, ReadError, SerializeData, Signature, Write, WriteError,
 };
-use chrono::{SecondsFormat, TimeZone, Utc};
+use chrono::{DateTime, Duration, TimeZone, Timelike, Utc};
 use keys::algorithm;
 use serde::Deserializer;
 #[cfg(feature = "std")]
@@ -149,11 +149,11 @@ impl Write for Tx {
         0_i32.write(bytes, pos);
 
         self.signers.len().write(bytes, pos)?;
-        expand::<String>(self.signers.iter(), bytes, pos);
+        expand::<String>(self.signers.iter(), bytes, pos)?;
         self.actions.len().write(bytes, pos);
-        expand::<Action>(self.actions.iter(), bytes, pos);
+        expand::<Action>(self.actions.iter(), bytes, pos)?;
         self.amount_limit.len().write(bytes, pos);
-        expand::<AmountLimit>(self.amount_limit.iter(), bytes, pos);
+        expand::<AmountLimit>(self.amount_limit.iter(), bytes, pos)?;
         self.signatures.len().write(bytes, pos);
         expand::<Signature>(self.signatures.iter(), bytes, pos)
     }
@@ -171,40 +171,22 @@ where
 }
 
 impl Tx {
-    pub fn new() -> Self {
-        Tx {
-            time: 0,
-            expiration: 0,
-            gas_ratio: 0.0,
-            gas_limit: 0.0,
-            delay: 0,
-            chain_id: 0,
-            actions: vec![],
-            amount_limit: vec![],
-            publisher: "".to_string(),
-            publisher_sigs: vec![],
-            signers: vec![],
-            signatures: vec![],
-        }
-    }
-
     pub fn from_action(actions: Vec<Action>) -> Self {
-        // let time = Utc::now().timestamp();
-        let time: i64 = 0;
-        let expiration = time + 90000000000;
-
+        let amount_limit = AmountLimit {
+            token: "*".to_string(),
+            value: "unlimited".to_string(),
+        };
+        let time = Utc::now().timestamp_nanos();
+        let expiration = time + Duration::seconds(10000).num_nanoseconds().unwrap();
         Tx {
             time,
             expiration,
             gas_ratio: 1000000.0,
             gas_limit: 1.0,
             delay: 0,
-            chain_id: 0,
+            chain_id: 1024,
             actions,
-            amount_limit: vec![AmountLimit {
-                token: String::from("*"),
-                value: String::from("unlimited"),
-            }],
+            amount_limit: vec![amount_limit],
             publisher: "".to_string(),
             publisher_sigs: vec![],
             signers: vec![],
@@ -266,15 +248,14 @@ impl Tx {
         Ok(())
     }
 
-    pub fn verify(&self) -> bool {
+    pub fn verify(&self) -> crate::Result<()> {
         for signature in &self.signatures {
             let tx_bytes = self.customized_to_serialize_data(false).unwrap();
             let mut hasher = Sha3_256::new();
             hasher.input(tx_bytes);
             let result = hasher.result();
             if !signature.verify(result.as_slice()) {
-                // Err(InvalidSignature())
-                return false;
+                return Err(InvalidSignature());
             }
         }
         for publisher_sig in &self.publisher_sigs {
@@ -283,10 +264,10 @@ impl Tx {
             hasher.input(tx_bytes);
             let result = hasher.result();
             if !publisher_sig.verify(result.as_slice()) {
-                return false;
+                return Err(InvalidPublisherSignature());
             }
         }
-        true
+        Ok(())
     }
 }
 
@@ -375,7 +356,7 @@ mod test {
         );
         // let tx_string = serde_json::to_string_pretty(&tx).unwrap();
         // dbg!(&tx_string);
-        assert!(tx.verify());
+        assert!(tx.verify().is_ok());
 
         let tx_str = r#"
         {
