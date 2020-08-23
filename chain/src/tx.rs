@@ -171,6 +171,7 @@ where
 }
 
 impl Tx {
+    #[cfg(feature = "std")]
     pub fn from_action(actions: Vec<Action>) -> Self {
         let amount_limit = AmountLimit {
             token: "*".to_string(),
@@ -292,9 +293,9 @@ mod test {
             delay: 0,
             chain_id: 0,
             actions: vec![Action {
-                contract: "cont".to_string(),
-                action_name: "abi".to_string(),
-                data: "[]".to_string(),
+                contract: "cont".to_string().into_bytes(),
+                action_name: "abi".to_string().into_bytes(),
+                data: "[]".to_string().into_bytes(),
             }],
             amount_limit: vec![AmountLimit {
                 token: "iost".to_string(),
@@ -334,9 +335,9 @@ mod test {
             delay: 0,
             chain_id: 1024,
             actions: vec![ Action {
-                contract: "token.iost".to_string(),
-                action_name: "transfer".to_string(),
-                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string()
+                contract: "token.iost".to_string().into_bytes(),
+                action_name: "transfer".to_string().into_bytes(),
+                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string().into_bytes()
             }],
             amount_limit: vec![ AmountLimit {
                 token: "*".to_string(),

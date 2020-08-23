@@ -1,3 +1,6 @@
+use alloc::vec;
+use alloc::vec::Vec;
+
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
 // #[cfg(feature = "std")]
