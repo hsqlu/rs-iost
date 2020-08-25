@@ -1,3 +1,6 @@
+use alloc::string::String;
+use alloc::vec::Vec;
+
 use crate::{algorithm, Result};
 // use crate::public::PublicKey;
 // use crate::secret::SecretKey;
@@ -15,21 +18,21 @@ pub struct KeyPair {
 }
 
 impl KeyPair {
-    pub fn new(algorithm_name: &str) -> Result<KeyPair> {
-        let algorithm = algorithm::new(algorithm_name);
-        let sk = algorithm.gen_sec_key();
-        let pk = algorithm.get_pub_key(sk.as_ref()).unwrap();
-        Ok(KeyPair {
-            algorithm: String::from(algorithm_name),
-            sk,
-            pk,
-        })
-    }
-
-    pub fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
-        let algorithm = algorithm::new(self.algorithm.as_str());
-        algorithm.sign(message, sec_key)
-    }
+    // pub fn new(algorithm_name: &str) -> Result<KeyPair> {
+    //     let algorithm = algorithm::new(algorithm_name);
+    //     let sk = algorithm.gen_sec_key();
+    //     let pk = algorithm.get_pub_key(sk.as_ref()).unwrap();
+    //     Ok(KeyPair {
+    //         algorithm: String::from(algorithm_name),
+    //         sk,
+    //         pk,
+    //     })
+    // }
+    //
+    // pub fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
+    //     let algorithm = algorithm::new(self.algorithm.as_str());
+    //     algorithm.sign(message, sec_key)
+    // }
 }
 
 // impl Keypair {

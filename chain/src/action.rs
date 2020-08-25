@@ -4,8 +4,6 @@ use alloc::{format, vec};
 
 use crate::Error::JsonParserError;
 use crate::{AccountName, Error, NumberBytes, Read, ReadError, SerializeData, Write, WriteError};
-use base58::ToBase58;
-use codec::{Decode, Encode};
 use core::str::FromStr;
 #[cfg(feature = "std")]
 use serde::{
@@ -15,18 +13,16 @@ use serde::{
 #[cfg(feature = "std")]
 use serde_json::to_string as json_to_string;
 
-#[derive(
-    Clone, Default, Debug, PartialEq, Read, Write, NumberBytes, Encode, Decode, SerializeData,
-)]
+#[derive(Clone, Default, Debug, PartialEq, Read, Write, NumberBytes, SerializeData)]
 #[cfg_attr(feature = "std", derive(Serialize))]
 #[iost_root_path = "crate"]
 pub struct Action {
     /// contract name
-    pub contract: Vec<u8>,
+    pub contract: String,
     /// function name of the contract
-    pub action_name: Vec<u8>,
+    pub action_name: String,
     /// Specific parameters of the call. Put every parameter in an array, and JSON-serialize this array. It may looks like ["a_string", 13]
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 #[cfg(feature = "std")]
@@ -69,9 +65,9 @@ impl<'de> serde::Deserialize<'de> for Action {
                     }
                 }
                 let action = Action {
-                    contract: contract.into_bytes(),
-                    action_name: action_name.into_bytes(),
-                    data: data.into_bytes(),
+                    contract: contract,
+                    action_name: action_name,
+                    data: data,
                 };
                 Ok(action)
             }
@@ -83,9 +79,9 @@ impl<'de> serde::Deserialize<'de> for Action {
 impl Action {
     pub fn new(contract: String, action_name: String, data: String) -> Self {
         Action {
-            contract: contract.into_bytes(),
-            action_name: action_name.into_bytes(),
-            data: data.into_bytes(),
+            contract,
+            action_name,
+            data,
         }
     }
 
@@ -97,9 +93,9 @@ impl Action {
     ) -> crate::Result<Self> {
         let data = serde_json::to_string(&action_transfer).unwrap();
         Ok(Action {
-            contract: contract.into_bytes(),
-            action_name: action_name.into_bytes(),
-            data: data.into_bytes(),
+            contract: contract,
+            action_name: action_name,
+            data: data,
         })
     }
 
@@ -128,14 +124,13 @@ impl Action {
 }
 
 impl core::fmt::Display for Action {
-    #[cfg(feature = "std")]
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(
             f,
             "contract: {}\n\
             action_name: {}\n\
             data: {}",
-            "", "", ""
+            self.contract, self.action_name, self.data,
         )
     }
 }
@@ -192,9 +187,9 @@ pub trait ToAction: Write + NumberBytes {
         // self.write(&mut data, &mut 0).unwrap();
 
         Ok(Action {
-            contract: contract.into_bytes(),
-            action_name: action_name.into_bytes(),
-            data: data.into_bytes(),
+            contract: contract,
+            action_name: action_name,
+            data: data,
         })
     }
 }
@@ -204,9 +199,9 @@ impl FromStr for Action {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Action {
-            contract: s.to_string().into_bytes(),
-            action_name: s.to_string().into_bytes(),
-            data: s.to_string().into_bytes(),
+            contract: s.to_string(),
+            action_name: s.to_string(),
+            data: s.to_string(),
         })
     }
 }
@@ -218,9 +213,9 @@ mod test {
     #[test]
     fn test_action() {
         let action = Action {
-            contract: "iost".to_string().into_bytes(),
-            action_name: "iost".to_string().into_bytes(),
-            data: "".to_string().into_bytes(),
+            contract: "iost".to_string(),
+            action_name: "iost".to_string(),
+            data: "".to_string(),
         };
         dbg!(action);
     }

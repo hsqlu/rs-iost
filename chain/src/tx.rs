@@ -8,11 +8,10 @@ use crate::{
 };
 use chrono::{DateTime, Duration, TimeZone, Timelike, Utc};
 use keys::algorithm;
-use serde::Deserializer;
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use sha3::{Digest, Sha3_256};
-use std::slice::Iter;
+// use std::slice::Iter;
 
 #[derive(Clone, Default, Debug, SerializeData)]
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
@@ -37,11 +36,11 @@ pub struct Tx {
     /// ID of the transaction sender
     // #[serde(skip)]
     // #[serde(deserialize_with="parse_color")]
-    #[serde(default)]
+    // #[serde(default)]
     pub publisher: String,
     /// Publisher's signature. The signing process is as follows. Publisher can provide multiple signatures with different permissions. You can refer to the documentation of the permission system
     // #[serde(skip)]
-    #[serde(default)]
+    // #[serde(default)]
     // #[serde(deserialize_with="parse_color")]
     pub publisher_sigs: Vec<Signature>,
     /// Signer ID other than publisher. It can be empty.
@@ -149,21 +148,21 @@ impl Write for Tx {
         0_i32.write(bytes, pos);
 
         self.signers.len().write(bytes, pos)?;
-        expand::<String>(self.signers.iter(), bytes, pos)?;
+        expand::<String>(&self.signers, bytes, pos)?;
         self.actions.len().write(bytes, pos);
-        expand::<Action>(self.actions.iter(), bytes, pos)?;
+        expand::<Action>(&self.actions, bytes, pos)?;
         self.amount_limit.len().write(bytes, pos);
-        expand::<AmountLimit>(self.amount_limit.iter(), bytes, pos)?;
+        expand::<AmountLimit>(&self.amount_limit, bytes, pos)?;
         self.signatures.len().write(bytes, pos);
-        expand::<Signature>(self.signatures.iter(), bytes, pos)
+        expand::<Signature>(&self.signatures, bytes, pos)
     }
 }
 
-fn expand<T>(x: Iter<T>, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError>
+fn expand<T>(x: &Vec<T>, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError>
 where
     T: NumberBytes + Write,
 {
-    for item in x {
+    for item in x.iter() {
         item.num_bytes().write(bytes, pos)?;
         item.write(bytes, pos)?;
     }
@@ -209,14 +208,14 @@ impl Tx {
         0_i32.write(bytes, pos);
 
         self.signers.len().write(bytes, pos)?;
-        expand::<String>(self.signers.iter(), bytes, pos);
+        expand::<String>(&self.signers, bytes, pos);
         self.actions.len().write(bytes, pos);
-        expand::<Action>(self.actions.iter(), bytes, pos);
+        expand::<Action>(&self.actions, bytes, pos);
         self.amount_limit.len().write(bytes, pos);
-        expand::<AmountLimit>(self.amount_limit.iter(), bytes, pos);
+        expand::<AmountLimit>(&self.amount_limit, bytes, pos);
         if with_sign {
             self.signatures.len().write(bytes, pos);
-            expand::<Signature>(self.signatures.iter(), bytes, pos);
+            expand::<Signature>(&self.signatures, bytes, pos);
         }
         Ok(())
     }
@@ -229,6 +228,7 @@ impl Tx {
         Ok(data.to_vec())
     }
 
+    #[cfg(feature = "std")]
     pub fn sign(
         &mut self,
         account_name: String,
@@ -244,11 +244,12 @@ impl Tx {
             hasher.input(tx_bytes);
             let result = hasher.result();
             self.publisher_sigs =
-                vec![Signature::sign(result.as_ref(), algorithm::ED25519, sec_key).unwrap()];
+                vec![Signature::sign(result.as_ref(), sign_algorithm, sec_key).unwrap()];
         }
         Ok(())
     }
 
+    #[cfg(feature = "std")]
     pub fn verify(&self) -> crate::Result<()> {
         for signature in &self.signatures {
             let tx_bytes = self.customized_to_serialize_data(false).unwrap();
@@ -272,12 +273,12 @@ impl Tx {
     }
 }
 
-fn parse_color<'de, D>(d: D) -> Result<String, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Deserialize::deserialize(d).map(|x: Option<_>| x.unwrap_or("".to_string()))
-}
+// fn parse_color<'de, D>(d: D) -> Result<String, D::Error>
+// where
+//     D: Deserializer<'de>,
+// {
+//     Deserialize::deserialize(d).map(|x: Option<_>| x.unwrap_or("".to_string()))
+// }
 
 #[cfg(test)]
 mod test {
@@ -293,9 +294,9 @@ mod test {
             delay: 0,
             chain_id: 0,
             actions: vec![Action {
-                contract: "cont".to_string().into_bytes(),
-                action_name: "abi".to_string().into_bytes(),
-                data: "[]".to_string().into_bytes(),
+                contract: "cont".to_string(),
+                action_name: "abi".to_string(),
+                data: "[]".to_string(),
             }],
             amount_limit: vec![AmountLimit {
                 token: "iost".to_string(),
@@ -335,9 +336,9 @@ mod test {
             delay: 0,
             chain_id: 1024,
             actions: vec![ Action {
-                contract: "token.iost".to_string().into_bytes(),
-                action_name: "transfer".to_string().into_bytes(),
-                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string().into_bytes()
+                contract: "token.iost".to_string(),
+                action_name: "transfer".to_string(),
+                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string(),
             }],
             amount_limit: vec![ AmountLimit {
                 token: "*".to_string(),
@@ -352,7 +353,7 @@ mod test {
         let sec_key = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
         tx.sign(
             "testaccount".to_string(),
-            algorithm::ED25519,
+            algorithm::SECP256K1,
             sec_key.as_slice(),
         );
         // let tx_string = serde_json::to_string_pretty(&tx).unwrap();
