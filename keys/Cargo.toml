@@ -13,7 +13,7 @@ byteorder = { version = "1.3", default-features = false }
 hex = { version = "0.4", default-features = false }
 libsecp256k1 = { git = "https://github.com/bifrost-codes/libsecp256k1.git", default-features = false, features = ["hmac"] }
 rand = { version = "0.7", default-features = false, features = ["alloc"] }
-#ed25519-dalek = { version = "1.0.0-pre.3", default-features = false, features = ["u64_backend"] }
+ed25519-dalek = { version = "1.0.0-pre.3", default-features = false, features = ["u64_backend"] }
 signature = {version = "1.2.2", default-features = false}
 
 [features]
@@ -22,6 +22,6 @@ std = [
     "base58",
     "base64/std",
     "rand/std",
-#    "ed25519-dalek/std",
+    "ed25519-dalek/std",
     "signature/std"
 ]

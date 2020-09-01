@@ -181,8 +181,8 @@ impl Tx {
         Tx {
             time,
             expiration,
-            gas_ratio: 1000000.0,
-            gas_limit: 1.0,
+            gas_ratio: 1.0,
+            gas_limit: 1000000.0,
             delay: 0,
             chain_id: 1024,
             actions,
@@ -202,7 +202,7 @@ impl Tx {
         let mut limit = (self.gas_limit * 100.0) as i64;
         limit.write(bytes, pos);
         self.delay.clone().write(bytes, pos);
-        self.chain_id.clone().write(bytes, pos);
+        (self.chain_id.clone() as i32).write(bytes, pos);
 
         // reserved field
         0_i32.write(bytes, pos);
@@ -239,6 +239,7 @@ impl Tx {
 
         if self.publisher_sigs.len() == 0 {
             let tx_bytes = self.customized_to_serialize_data(true).unwrap();
+            // dbg!(tx_bytes.as_slice());
             // create a SHA3-256 object
             let mut hasher = Sha3_256::new();
             hasher.input(tx_bytes);
@@ -283,42 +284,76 @@ impl Tx {
 #[cfg(test)]
 mod test {
     use super::*;
+    use base58::FromBase58;
+
+    #[test]
+    fn test() {
+        let mut tx = Tx::from_action(vec![Action {
+            contract: "token.iost".to_string(),
+            action_name: "transfer".to_string(),
+            data: r#"["iost","admin","lispczz3","100",""]"#.to_string(),
+        }]);
+
+        let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
+        // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
+        tx.sign("admin".to_string(), algorithm::ED25519, sec_key.as_slice());
+        let result = tx.verify();
+        assert!(result.is_ok());
+
+        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        // dbg!(tx_string);
+        let client = reqwest::blocking::Client::new();
+        let res = client
+            .post("http://127.0.0.1:30001/sendTx")
+            .body(tx_string)
+            .send()
+            .unwrap();
+        dbg!(res.text());
+    }
 
     #[test]
     fn test_tx() {
         let mut tx = Tx {
-            time: 1544013436179000000,
-            expiration: 1544013526179000000,
-            gas_ratio: 100.0,
-            gas_limit: 123400.0,
+            time: 1598918258274417000,
+            expiration: 1598918348274417000,
+            gas_ratio: 1.0,
+            gas_limit: 1000000.0,
             delay: 0,
-            chain_id: 0,
+            chain_id: 1024,
             actions: vec![Action {
-                contract: "cont".to_string(),
-                action_name: "abi".to_string(),
-                data: "[]".to_string(),
+                contract: "token.iost".to_string(),
+                action_name: "transfer".to_string(),
+                data: r#"["iost","admin","lispczz3","100",""]"#.to_string(),
             }],
             amount_limit: vec![AmountLimit {
-                token: "iost".to_string(),
-                value: "123".to_string(),
+                token: "*".to_string(),
+                value: "unlimited".to_string(),
             }],
             publisher: "".to_string(),
             publisher_sigs: vec![],
-            signers: vec!["abc".to_string()],
-
+            signers: vec![],
             signatures: vec![],
         };
-        let data: Vec<u8> = tx.to_serialize_data().unwrap();
-
+        // let data: Vec<u8> = tx.to_serialize_data().unwrap();
+        let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
+        // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
+        tx.sign("admin".to_string(), algorithm::ED25519, sec_key.as_slice());
         // let s = String::from_utf8(data.clone());
-        dbg!(hex::encode(data.as_slice()));
-        // create a SHA3-256 object
-        let mut hasher = Sha3_256::new();
+        // dbg!(hex::encode(data.as_slice()));
+        let result = tx.verify();
+        assert!(result.is_ok());
 
+        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        dbg!(tx_string);
+        // create a SHA3-256 object
+        // let mut hasher = Sha3_256::new();
+        // "Fpl2AbiSgVxJzhOU1ASofiYoLf0uqXlIWz0hXroxd0i38BfJVErzVdR7mQP1SEXk1sKz98i+fPDyPmRY56WbDA=="
+
+        // "6BK1LqmtXLqamvA6/MbylCpFJLDfPANE3BlQcoMWcMQ="
         // write input message
         // let data = result.unwrap();
-        hasher.input(data);
-        let result = hasher.result();
+        // hasher.input(data);
+        // let result = hasher.result();
         // dbg!(result.as_slice());
         // assert_eq!(
         //     "93c24341c06cd7a23023d278dd044bf736730ac5e32d432aff05a00ac3df85f8",
@@ -353,11 +388,11 @@ mod test {
         let sec_key = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
         tx.sign(
             "testaccount".to_string(),
-            algorithm::SECP256K1,
+            algorithm::ED25519,
             sec_key.as_slice(),
         );
-        // let tx_string = serde_json::to_string_pretty(&tx).unwrap();
-        // dbg!(&tx_string);
+        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        dbg!(&tx_string);
         assert!(tx.verify().is_ok());
 
         let tx_str = r#"
