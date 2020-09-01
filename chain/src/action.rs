@@ -4,6 +4,7 @@ use alloc::{format, vec};
 
 use crate::Error::JsonParserError;
 use crate::{AccountName, Error, NumberBytes, Read, ReadError, SerializeData, Write, WriteError};
+use codec::{Decode, Encode};
 use core::str::FromStr;
 #[cfg(feature = "std")]
 use serde::{
@@ -13,16 +14,18 @@ use serde::{
 #[cfg(feature = "std")]
 use serde_json::to_string as json_to_string;
 
-#[derive(Clone, Default, Debug, PartialEq, Read, Write, NumberBytes, SerializeData)]
+#[derive(
+    Clone, Default, Debug, PartialEq, Read, Write, Encode, Decode, NumberBytes, SerializeData,
+)]
 #[cfg_attr(feature = "std", derive(Serialize))]
 #[iost_root_path = "crate"]
 pub struct Action {
     /// contract name
-    pub contract: String,
+    pub contract: Vec<u8>,
     /// function name of the contract
-    pub action_name: String,
+    pub action_name: Vec<u8>,
     /// Specific parameters of the call. Put every parameter in an array, and JSON-serialize this array. It may looks like ["a_string", 13]
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
 #[cfg(feature = "std")]
@@ -65,9 +68,9 @@ impl<'de> serde::Deserialize<'de> for Action {
                     }
                 }
                 let action = Action {
-                    contract: contract,
-                    action_name: action_name,
-                    data: data,
+                    contract: contract.into_bytes(),
+                    action_name: action_name.into_bytes(),
+                    data: data.into_bytes(),
                 };
                 Ok(action)
             }
@@ -79,39 +82,30 @@ impl<'de> serde::Deserialize<'de> for Action {
 impl Action {
     pub fn new(contract: String, action_name: String, data: String) -> Self {
         Action {
-            contract,
-            action_name,
-            data,
+            contract: contract.into_bytes(),
+            action_name: action_name.into_bytes(),
+            data: data.into_bytes(),
         }
     }
 
-    #[cfg(feature = "std")]
-    pub fn from_str(
-        contract: String,
-        action_name: String,
+    // #[cfg(feature = "std")]
+    pub fn from_str<T: AsRef<str>>(
+        contract: T,
+        action_name: T,
         action_transfer: ActionTransfer,
     ) -> crate::Result<Self> {
-        let data = serde_json::to_string(&action_transfer).unwrap();
+        // let data = serde_json::to_string(&action_transfer).unwrap();
         Ok(Action {
-            contract: contract,
-            action_name: action_name,
-            data: data,
+            contract: contract.as_ref().as_bytes().to_vec(),
+            action_name: action_name.as_ref().as_bytes().to_vec(),
+            data: "".as_bytes().to_vec(),
         })
     }
 
-    #[cfg(feature = "std")]
-    pub fn transfer<T: AsRef<str>>(
-        from: String,
-        to: String,
-        quantity: String,
-        memo: T,
-    ) -> crate::Result<Action> {
+    // #[cfg(feature = "std")]
+    pub fn transfer<T: AsRef<str>>(from: T, to: T, quantity: T, memo: T) -> crate::Result<Action> {
         let action_transfer = ActionTransfer::from_str(from, to, quantity, memo)?;
-        Action::from_str(
-            String::from("token.iost"),
-            String::from("transfer"),
-            action_transfer,
-        )
+        Action::from_str("token.iost", "transfer", action_transfer)
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
@@ -130,7 +124,9 @@ impl core::fmt::Display for Action {
             "contract: {}\n\
             action_name: {}\n\
             data: {}",
-            self.contract, self.action_name, self.data,
+            String::from_utf8_lossy(self.contract.as_slice()),
+            String::from_utf8_lossy(self.action_name.as_slice()),
+            String::from_utf8_lossy(self.data.as_slice()),
         )
     }
 }
@@ -157,17 +153,12 @@ impl ActionTransfer {
         }
     }
 
-    pub fn from_str<T: AsRef<str>>(
-        from: String,
-        to: String,
-        amount: String,
-        memo: T,
-    ) -> crate::Result<Self> {
+    pub fn from_str<T: AsRef<str>>(from: T, to: T, amount: T, memo: T) -> crate::Result<Self> {
         Ok(ActionTransfer {
             tokenType: String::from("iost"),
-            from,
-            to,
-            amount,
+            from: from.as_ref().to_string(),
+            to: to.as_ref().to_string(),
+            amount: amount.as_ref().to_string(),
             memo: memo.as_ref().to_string(),
         })
     }
@@ -187,9 +178,9 @@ pub trait ToAction: Write + NumberBytes {
         // self.write(&mut data, &mut 0).unwrap();
 
         Ok(Action {
-            contract: contract,
-            action_name: action_name,
-            data: data,
+            contract: contract.into_bytes(),
+            action_name: action_name.into_bytes(),
+            data: data.into_bytes(),
         })
     }
 }
@@ -199,9 +190,9 @@ impl FromStr for Action {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Action {
-            contract: s.to_string(),
-            action_name: s.to_string(),
-            data: s.to_string(),
+            contract: s.to_string().into_bytes(),
+            action_name: s.to_string().into_bytes(),
+            data: s.to_string().into_bytes(),
         })
     }
 }
@@ -213,11 +204,13 @@ mod test {
     #[test]
     fn test_action() {
         let action = Action {
-            contract: "iost".to_string(),
-            action_name: "iost".to_string(),
-            data: "".to_string(),
+            contract: "iost".to_string().into_bytes(),
+            action_name: "iost".to_string().into_bytes(),
+            data: "".to_string().into_bytes(),
         };
-        dbg!(action);
+        // let bytes = "action".to_string().into_bytes();
+        // dbg!(bytes.clone());
+        // dbg!(String::from_utf8_lossy(bytes.as_slice()));
     }
 
     #[test]

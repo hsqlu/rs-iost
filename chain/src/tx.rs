@@ -34,14 +34,8 @@ pub struct Tx {
     /// Token restrictions on transactions. You can specify multiple tokens and a corresponding number limit. If the transaction exceeds these limits, execution fails
     pub amount_limit: Vec<AmountLimit>,
     /// ID of the transaction sender
-    // #[serde(skip)]
-    // #[serde(deserialize_with="parse_color")]
-    // #[serde(default)]
     pub publisher: String,
     /// Publisher's signature. The signing process is as follows. Publisher can provide multiple signatures with different permissions. You can refer to the documentation of the permission system
-    // #[serde(skip)]
-    // #[serde(default)]
-    // #[serde(deserialize_with="parse_color")]
     pub publisher_sigs: Vec<Signature>,
     /// Signer ID other than publisher. It can be empty.
     pub signers: Vec<String>,
@@ -170,17 +164,17 @@ where
 }
 
 impl Tx {
-    #[cfg(feature = "std")]
+    // #[cfg(feature = "std")]
     pub fn from_action(actions: Vec<Action>) -> Self {
         let amount_limit = AmountLimit {
             token: "*".to_string(),
             value: "unlimited".to_string(),
         };
-        let time = Utc::now().timestamp_nanos();
-        let expiration = time + Duration::seconds(10000).num_nanoseconds().unwrap();
+        // let time = Utc::now().timestamp_nanos();
+        // let expiration = time + Duration::seconds(10000).num_nanoseconds().unwrap();
         Tx {
-            time,
-            expiration,
+            time: 0,
+            expiration: 0,
             gas_ratio: 1.0,
             gas_limit: 1000000.0,
             delay: 0,
@@ -289,9 +283,9 @@ mod test {
     #[test]
     fn test() {
         let mut tx = Tx::from_action(vec![Action {
-            contract: "token.iost".to_string(),
-            action_name: "transfer".to_string(),
-            data: r#"["iost","admin","lispczz3","100",""]"#.to_string(),
+            contract: "token.iost".to_string().into_bytes(),
+            action_name: "transfer".to_string().into_bytes(),
+            data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
         }]);
 
         let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
@@ -321,9 +315,9 @@ mod test {
             delay: 0,
             chain_id: 1024,
             actions: vec![Action {
-                contract: "token.iost".to_string(),
-                action_name: "transfer".to_string(),
-                data: r#"["iost","admin","lispczz3","100",""]"#.to_string(),
+                contract: "token.iost".to_string().into_bytes(),
+                action_name: "transfer".to_string().into_bytes(),
+                data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
             }],
             amount_limit: vec![AmountLimit {
                 token: "*".to_string(),
@@ -371,9 +365,9 @@ mod test {
             delay: 0,
             chain_id: 1024,
             actions: vec![ Action {
-                contract: "token.iost".to_string(),
-                action_name: "transfer".to_string(),
-                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string(),
+                contract: "token.iost".to_string().into_bytes(),
+                action_name: "transfer".to_string().into_bytes(),
+                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string().into_bytes(),
             }],
             amount_limit: vec![ AmountLimit {
                 token: "*".to_string(),
