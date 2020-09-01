@@ -4,8 +4,8 @@ use alloc::vec::Vec;
 
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-#[cfg(feature = "std")]
-use ed25519_dalek::{Signer, Verifier};
+// #[cfg(feature = "std")]
+// use ed25519_dalek::{Signer, Verifier};
 #[cfg(feature = "std")]
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]
@@ -39,32 +39,31 @@ pub fn new(algorithm_name: &str) -> Box<dyn Algorithm> {
 
 impl Algorithm for AlgorithmEd25519 {
     fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
-        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
-        let signature = key_pair.sign(message);
-        signature.to_bytes().to_vec()
-        // unimplemented!()
+        // let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
+        // let signature = key_pair.sign(message);
+        // signature.to_bytes().to_vec()
+        unimplemented!()
     }
 
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
-        let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
-        // // let signature: [u8; 64] = signature[..64].into();
-        let sig = signature::Signature::from_bytes(signature).unwrap();
-        public_key.verify(message, &sig).is_ok()
-        // unimplemented!()
+        // let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
+        // let sig = signature::Signature::from_bytes(signature).unwrap();
+        // public_key.verify(message, &sig).is_ok()
+        unimplemented!()
     }
 
     #[cfg(feature = "std")]
     fn gen_sec_key(&self) -> Vec<u8> {
-        let mut csprng = OsRng {};
-        let secret_key: ed25519_dalek::SecretKey = ed25519_dalek::SecretKey::generate(&mut csprng);
-        Vec::from(secret_key.as_ref())
-        // unimplemented!()
+        // let mut csprng = OsRng {};
+        // let secret_key: ed25519_dalek::SecretKey = ed25519_dalek::SecretKey::generate(&mut csprng);
+        // Vec::from(secret_key.as_ref())
+        unimplemented!()
     }
 
     fn get_pub_key(&self, sec_key: &[u8]) -> crate::Result<Vec<u8>> {
-        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
-        Ok(Vec::from(key_pair.public.as_ref()))
-        // unimplemented!()
+        // let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
+        // Ok(Vec::from(key_pair.public.as_ref()))
+        unimplemented!()
     }
 
     fn check(&self, sec_key: &[u8]) -> crate::Result<()> {

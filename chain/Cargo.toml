@@ -20,12 +20,10 @@ keys = { package = "iost-keys", path = "../keys", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive", "alloc"] }
 serde_json = { version = "1.0", default-features = false, optional = true }
 sha3 = { version = "0.8.2", default-features = false}
-reqwest = { version = "0.10.0", features = ["json", "blocking"] }
-tokio = { version = "0.2.6", features = ["macros"] }
+#reqwest = { version = "0.10.0", features = ["json", "blocking"] }
 
 [dev-dependencies]
-#iost-rpc = { path = "../rpc" }
-
+tokio = { version = "0.2.6", features = ["macros"] }
 
 [features]
 default = ["std"]
