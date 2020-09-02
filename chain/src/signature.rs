@@ -20,7 +20,7 @@ pub struct Signature {
 }
 
 impl Signature {
-    #[cfg(feature = "std")]
+    // #[cfg(feature = "std")]
     pub fn sign(message: &[u8], sign_algorithm: &str, sec_key: &[u8]) -> crate::Result<Signature> {
         let algorithm = algorithm::new(sign_algorithm);
         let pub_key = algorithm.get_pub_key(sec_key).unwrap();

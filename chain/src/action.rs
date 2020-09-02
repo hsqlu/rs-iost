@@ -135,7 +135,7 @@ impl core::fmt::Display for Action {
 #[derive(Clone, Debug, Read, Write, NumberBytes, Default, SerializeData)]
 #[iost_root_path = "crate"]
 pub struct ActionTransfer {
-    pub tokenType: String,
+    pub token_type: String,
     pub from: String,
     pub to: String,
     pub amount: String,
@@ -143,9 +143,9 @@ pub struct ActionTransfer {
 }
 
 impl ActionTransfer {
-    pub fn new(tokenType: String, from: String, to: String, amount: String, memo: String) -> Self {
+    pub fn new(token_type: String, from: String, to: String, amount: String, memo: String) -> Self {
         ActionTransfer {
-            tokenType,
+            token_type,
             from,
             to,
             amount,
@@ -155,7 +155,7 @@ impl ActionTransfer {
 
     pub fn from_str<T: AsRef<str>>(from: T, to: T, amount: T, memo: T) -> crate::Result<Self> {
         Ok(ActionTransfer {
-            tokenType: String::from("iost"),
+            token_type: String::from("iost"),
             from: from.as_ref().to_string(),
             to: to.as_ref().to_string(),
             amount: amount.as_ref().to_string(),
