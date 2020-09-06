@@ -20,7 +20,6 @@ pub struct Signature {
 }
 
 impl Signature {
-    #[cfg(feature = "std")]
     pub fn sign(message: &[u8], sign_algorithm: &str, sec_key: &[u8]) -> crate::Result<Signature> {
         let algorithm = algorithm::new(sign_algorithm);
         let pub_key = algorithm.get_pub_key(sec_key).unwrap();
@@ -32,13 +31,11 @@ impl Signature {
         })
     }
 
-    #[cfg(feature = "std")]
     pub fn verify(&self, message: &[u8]) -> bool {
         let algorithm = algorithm::new(self.algorithm.as_str());
         let pub_key = base64::decode(self.public_key.as_str()).unwrap();
         let sig = base64::decode(self.signature.as_str()).unwrap();
         algorithm.verify(message, pub_key.as_slice(), sig.as_slice())
-        // true
     }
 }
 

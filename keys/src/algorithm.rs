@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-// #[cfg(feature = "std")]
 // use ed25519_dalek::{Signer, Verifier};
 #[cfg(feature = "std")]
 use rand::rngs::OsRng;
@@ -47,7 +46,6 @@ impl Algorithm for AlgorithmEd25519 {
 
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
         // let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
-        // // let signature: [u8; 64] = signature[..64].into();
         // let sig = signature::Signature::from_bytes(signature).unwrap();
         // public_key.verify(message, &sig).is_ok()
         unimplemented!()
@@ -111,7 +109,6 @@ mod test {
     use super::*;
     use base58::{FromBase58, ToBase58};
     use base64;
-    // use ed25519_dalek::Keypair;
 
     #[test]
     fn algorithm_works_as_expect() {
@@ -122,18 +119,18 @@ mod test {
 
         let ed25519 = super::new(ED25519);
 
-        // for (hashed_code, expected) in cases {
-        //     let sk = hashed_code.from_base58().unwrap();
-        //     let pub_key = ed25519.get_pub_key(sk.as_ref()).unwrap();
-        //     let result = pub_key.to_base58();
-        //     assert_eq!(result, expected.to_string());
-        // }
-        // let encoded_sk = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
-        // let to_encode_pub_key = ed25519.get_pub_key(encoded_sk.as_ref()).unwrap();
-        // assert_eq!(
-        //     "lDS+SdM+aiVHbDyXapvrsgyKxFg9mJuHWPZb/INBRWY=",
-        //     base64::encode(to_encode_pub_key)
-        // );
+        for (hashed_code, expected) in cases {
+            let sk = hashed_code.from_base58().unwrap();
+            let pub_key = ed25519.get_pub_key(sk.as_ref()).unwrap();
+            let result = pub_key.to_base58();
+            assert_eq!(result, expected.to_string());
+        }
+        let encoded_sk = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
+        let to_encode_pub_key = ed25519.get_pub_key(encoded_sk.as_ref()).unwrap();
+        assert_eq!(
+            "lDS+SdM+aiVHbDyXapvrsgyKxFg9mJuHWPZb/INBRWY=",
+            base64::encode(to_encode_pub_key)
+        );
         let secp256k1 = super::new(SECP256K1);
 
         let sk = "3BZ3HWs2nWucCCvLp7FRFv1K7RR3fAjjEQccf9EJrTv4"

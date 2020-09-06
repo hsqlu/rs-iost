@@ -33,6 +33,8 @@ pub mod tx_response;
 pub mod unsigned_int;
 pub mod vote_info;
 
+mod get_chain_info;
+
 pub use iost_derive::*;
 
 pub use self::{
