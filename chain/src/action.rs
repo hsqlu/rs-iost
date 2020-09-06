@@ -14,10 +14,8 @@ use serde::{
 #[cfg(feature = "std")]
 use serde_json::to_string as json_to_string;
 
-#[derive(
-    Clone, Default, Debug, PartialEq, Read, Write, Encode, Decode, NumberBytes, SerializeData,
-)]
-#[cfg_attr(feature = "std", derive(Serialize))]
+#[derive(Clone, Default, Debug, PartialEq, Encode, Decode, SerializeData)]
+// #[cfg_attr(feature = "std", derive(Serialize))]
 #[iost_root_path = "crate"]
 pub struct Action {
     /// contract name
@@ -26,6 +24,31 @@ pub struct Action {
     pub action_name: Vec<u8>,
     /// Specific parameters of the call. Put every parameter in an array, and JSON-serialize this array. It may looks like ["a_string", 13]
     pub data: Vec<u8>,
+}
+
+#[cfg(feature = "std")]
+impl serde::ser::Serialize for Action {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Action", 3)?;
+        state.serialize_field(
+            "contract",
+            String::from_utf8(self.contract.clone()).unwrap().as_str(),
+        )?;
+        state.serialize_field(
+            "action_name",
+            String::from_utf8(self.action_name.clone())
+                .unwrap()
+                .as_str(),
+        )?;
+        state.serialize_field(
+            "data",
+            String::from_utf8(self.data.clone()).unwrap().as_str(),
+        )?;
+        state.end()
+    }
 }
 
 #[cfg(feature = "std")]
@@ -38,7 +61,6 @@ impl<'de> serde::Deserialize<'de> for Action {
         struct VisitorAction;
         impl<'de> serde::de::Visitor<'de> for VisitorAction {
             type Value = Action;
-
             fn expecting(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
                 write!(f, "string or a struct, but this is: {:?}", self)
             }
@@ -47,19 +69,22 @@ impl<'de> serde::Deserialize<'de> for Action {
             where
                 D: serde::de::MapAccess<'de>,
             {
-                let mut contract = String::from("");
-                let mut action_name = String::from("");
-                let mut data = String::from("");
+                let mut contract: Vec<u8> = vec![];
+                let mut action_name: Vec<u8> = vec![];
+                let mut data: Vec<u8> = vec![];
                 while let Some(field) = map.next_key()? {
                     match field {
                         "contract" => {
-                            contract = map.next_value()?;
+                            let contract_value: String = map.next_value()?;
+                            contract = contract_value.into_bytes();
                         }
                         "action_name" => {
-                            action_name = map.next_value()?;
+                            let account_name_value: String = map.next_value()?;
+                            action_name = account_name_value.into_bytes();
                         }
                         "data" => {
-                            data = map.next_value()?;
+                            let data_value: String = map.next_value()?;
+                            data = data_value.into_bytes();
                         }
                         _ => {
                             let _: serde_json::Value = map.next_value()?;
@@ -68,9 +93,9 @@ impl<'de> serde::Deserialize<'de> for Action {
                     }
                 }
                 let action = Action {
-                    contract: contract.into_bytes(),
-                    action_name: action_name.into_bytes(),
-                    data: data.into_bytes(),
+                    contract,
+                    action_name,
+                    data,
                 };
                 Ok(action)
             }
@@ -108,6 +133,14 @@ impl Action {
         Action::from_str("token.iost", "transfer", action_transfer)
     }
 
+    pub fn from_shadow_action(shadow_action: ShadowAction) -> Action {
+        Action {
+            contract: shadow_action.contract.into_bytes(),
+            action_name: shadow_action.action_name.into_bytes(),
+            data: shadow_action.data.into_bytes(),
+        }
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = vec![];
         // result.write(self.contract.as_bytes());
@@ -128,6 +161,30 @@ impl core::fmt::Display for Action {
             String::from_utf8_lossy(self.action_name.as_slice()),
             String::from_utf8_lossy(self.data.as_slice()),
         )
+    }
+}
+
+impl Write for Action {
+    fn write(&self, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError> {
+        let shadow_action = ShadowAction::from_action(self).unwrap();
+        shadow_action
+            .write(bytes, pos)
+            .map_err(crate::Error::BytesWriteError);
+        Ok(())
+    }
+}
+
+impl Read for Action {
+    fn read(bytes: &[u8], pos: &mut usize) -> Result<Self, ReadError> {
+        let shadow_action: ShadowAction = ShadowAction::read(bytes, pos)?;
+        Ok(Action::from_shadow_action(shadow_action))
+    }
+}
+
+impl NumberBytes for Action {
+    fn num_bytes(&self) -> usize {
+        let shadow_action = ShadowAction::from_action(self).unwrap();
+        shadow_action.num_bytes()
     }
 }
 
@@ -160,6 +217,28 @@ impl ActionTransfer {
             to: to.as_ref().to_string(),
             amount: amount.as_ref().to_string(),
             memo: memo.as_ref().to_string(),
+        })
+    }
+}
+
+#[derive(Clone, Default, Debug, PartialEq, Read, Write, NumberBytes, SerializeData)]
+#[cfg_attr(feature = "std", derive(Serialize))]
+#[iost_root_path = "crate"]
+pub struct ShadowAction {
+    /// contract name
+    pub contract: String,
+    /// function name of the contract
+    pub action_name: String,
+    /// Specific parameters of the call. Put every parameter in an array, and JSON-serialize this array. It may looks like ["a_string", 13]
+    pub data: String,
+}
+
+impl ShadowAction {
+    fn from_action(action: &Action) -> crate::Result<ShadowAction> {
+        Ok(ShadowAction {
+            contract: String::from_utf8(action.contract.clone()).unwrap(),
+            action_name: String::from_utf8(action.action_name.clone()).unwrap(),
+            data: String::from_utf8(action.data.clone()).unwrap(),
         })
     }
 }
@@ -200,6 +279,7 @@ impl FromStr for Action {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::Read;
 
     #[test]
     fn test_action() {
@@ -208,9 +288,26 @@ mod test {
             action_name: "iost".to_string().into_bytes(),
             data: "".to_string().into_bytes(),
         };
-        // let bytes = "action".to_string().into_bytes();
-        // dbg!(bytes.clone());
-        // dbg!(String::from_utf8_lossy(bytes.as_slice()));
+        let data = action.to_serialize_data().unwrap();
+
+        let sa = ShadowAction {
+            contract: "iost".to_string(),
+            action_name: "iost".to_string(),
+            data: "".to_string(),
+        };
+        let sa_data = sa.to_serialize_data().unwrap();
+        let d_sa = ShadowAction::read(&sa_data, &mut 0).unwrap();
+        assert_eq!(data.num_bytes(), sa_data.num_bytes());
+        assert_eq!(hex::encode(data), hex::encode(sa_data));
+        let other = Action {
+            contract: "token.iost".to_string().into_bytes(),
+            action_name: "transfer".to_string().into_bytes(),
+            data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
+        };
+        let mut d = other.to_serialize_data().unwrap();
+        let a = Action::read(d.as_ref(), &mut 0).unwrap();
+        let s_a = ShadowAction::from_action(&a);
+        dbg!(s_a);
     }
 
     #[test]

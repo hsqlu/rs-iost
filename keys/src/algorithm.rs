@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-// #[cfg(feature = "std")]
 // use ed25519_dalek::{Signer, Verifier};
 #[cfg(feature = "std")]
 use rand::rngs::OsRng;
@@ -110,7 +109,6 @@ mod test {
     use super::*;
     use base58::{FromBase58, ToBase58};
     use base64;
-    // use ed25519_dalek::Keypair;
 
     #[test]
     fn algorithm_works_as_expect() {

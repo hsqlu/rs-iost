@@ -210,7 +210,8 @@ impl NumberBytes for usize {
 impl Read for usize {
     #[inline]
     fn read(bytes: &[u8], pos: &mut usize) -> Result<Self, ReadError> {
-        UnsignedInt::read(bytes, pos).map(core::convert::Into::into)
+        let s = u32::read(bytes, pos).unwrap();
+        Ok(s as usize)
     }
 }
 

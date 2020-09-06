@@ -9,9 +9,8 @@ use crate::{
 use chrono::{DateTime, Duration, TimeZone, Timelike, Utc};
 use keys::algorithm;
 #[cfg(feature = "std")]
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{ser::Serializer, Deserialize, Deserializer, Serialize};
 use sha3::{Digest, Sha3_256};
-// use std::slice::Iter;
 
 #[derive(Clone, Default, Debug, Read, Write, NumberBytes, SerializeData)]
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
@@ -42,20 +41,6 @@ pub struct Tx {
     /// Signature of signers. Each signer can have one or more signatures, so the length is not less than the length of signers
     pub signatures: Vec<Signature>,
 }
-
-// impl NumberBytes for Tx {
-//     #[inline]
-//     fn num_bytes(&self) -> usize {
-//         48 + self.signers.num_bytes()
-//             + self.signers.len() * 4
-//             + self.actions.num_bytes()
-//             + self.actions.len() * 4
-//             + self.amount_limit.num_bytes()
-//             + self.amount_limit.len() * 4
-//             + self.signatures.num_bytes()
-//             + self.signatures.len() * 4
-//     }
-// }
 
 // impl Read for Tx {
 //     #[inline]
@@ -164,17 +149,39 @@ where
 }
 
 impl Tx {
-    // #[cfg(feature = "std")]
+    pub fn new(time: i64, expiration: i64, chain_id: u32, actions: Vec<Action>) -> Self {
+        let amount_limit = AmountLimit {
+            token: "*".to_string(),
+            value: "unlimited".to_string(),
+        };
+
+        Tx {
+            time,
+            expiration,
+            gas_ratio: 1.0,
+            gas_limit: 1000000.0,
+            delay: 0,
+            chain_id,
+            actions,
+            amount_limit: vec![amount_limit],
+            publisher: "".to_string(),
+            publisher_sigs: vec![],
+            signers: vec![],
+            signatures: vec![],
+        }
+    }
+
+    #[cfg(feature = "std")]
     pub fn from_action(actions: Vec<Action>) -> Self {
         let amount_limit = AmountLimit {
             token: "*".to_string(),
             value: "unlimited".to_string(),
         };
-        // let time = Utc::now().timestamp_nanos();
-        // let expiration = time + Duration::seconds(10000).num_nanoseconds().unwrap();
+        let time = Utc::now().timestamp_nanos();
+        let expiration = time + Duration::seconds(10000).num_nanoseconds().unwrap();
         Tx {
-            time: 0,
-            expiration: 0,
+            time,
+            expiration,
             gas_ratio: 1.0,
             gas_limit: 1000000.0,
             delay: 0,
@@ -185,6 +192,22 @@ impl Tx {
             publisher_sigs: vec![],
             signers: vec![],
             signatures: vec![],
+        }
+    }
+
+    #[inline]
+    fn number_bytes(&self, with_sign: bool) -> usize {
+        let res = 48
+            + self.signers.num_bytes()
+            + self.signers.len() * 4
+            + self.actions.num_bytes()
+            + self.actions.len() * 4
+            + self.amount_limit.num_bytes()
+            + self.amount_limit.len() * 4;
+        if with_sign {
+            res + self.signatures.num_bytes() + self.signatures.len() * 4
+        } else {
+            res
         }
     }
 
@@ -215,14 +238,13 @@ impl Tx {
     }
 
     pub fn customized_to_serialize_data(&self, with_sign: bool) -> crate::Result<Vec<u8>> {
-        let mut data = vec![0u8; self.num_bytes()];
+        let mut data = vec![0u8; self.number_bytes(with_sign)];
         self.write(&mut data, &mut 0, with_sign)
             .map_err(crate::Error::BytesWriteError)
             .unwrap();
         Ok(data.to_vec())
     }
 
-    // #[cfg(feature = "std")]
     pub fn sign(
         &mut self,
         account_name: String,
@@ -233,7 +255,6 @@ impl Tx {
 
         if self.publisher_sigs.len() == 0 {
             let tx_bytes = self.customized_to_serialize_data(true).unwrap();
-            // dbg!(tx_bytes.as_slice());
             // create a SHA3-256 object
             let mut hasher = Sha3_256::new();
             hasher.input(tx_bytes);
@@ -244,7 +265,6 @@ impl Tx {
         Ok(())
     }
 
-    #[cfg(feature = "std")]
     pub fn verify(&self) -> crate::Result<()> {
         for signature in &self.signatures {
             let tx_bytes = self.customized_to_serialize_data(false).unwrap();
@@ -268,17 +288,27 @@ impl Tx {
     }
 }
 
-// fn parse_color<'de, D>(d: D) -> Result<String, D::Error>
-// where
-//     D: Deserializer<'de>,
-// {
-//     Deserialize::deserialize(d).map(|x: Option<_>| x.unwrap_or("".to_string()))
-// }
-
 #[cfg(test)]
 mod test {
     use super::*;
     use base58::FromBase58;
+
+    #[test]
+    fn test_bytes_serialization() {
+        let tx = Tx::from_action(vec![Action {
+            contract: "token.iost".to_string().into_bytes(),
+            action_name: "transfer".to_string().into_bytes(),
+            data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
+        }]);
+
+        let mut data = tx.to_serialize_data().unwrap();
+        // assert!(data.is_ok());
+        dbg!(tx.num_bytes());
+        dbg!(data.len());
+
+        let other_tx = Tx::read(&mut data, &mut 0).unwrap();
+        dbg!(other_tx);
+    }
 
     #[test]
     fn test() {
@@ -385,8 +415,6 @@ mod test {
             algorithm::ED25519,
             sec_key.as_slice(),
         );
-        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
-        dbg!(&tx_string);
         assert!(tx.verify().is_ok());
 
         let tx_str = r#"
