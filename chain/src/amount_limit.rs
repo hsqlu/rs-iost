@@ -3,11 +3,12 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::{NumberBytes, Read, SerializeData, Write};
+use lite_json::{JsonValue, Serialize};
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize as SerSerialize};
 
 #[derive(Clone, Default, Debug, NumberBytes, Read, Write, SerializeData)]
-#[cfg_attr(feature = "std", derive(Serialize))]
+#[cfg_attr(feature = "std", derive(SerSerialize))]
 #[iost_root_path = "crate"]
 pub struct AmountLimit {
     /// token name
@@ -62,5 +63,20 @@ impl<'de> serde::Deserialize<'de> for AmountLimit {
 impl AmountLimit {
     pub fn new(token: String, value: String) -> Self {
         AmountLimit { token, value }
+    }
+
+    pub fn no_std_serialize(&self) -> String {
+        let object = JsonValue::Object(vec![
+            (
+                "token".chars().collect::<Vec<_>>(),
+                JsonValue::String(self.token.chars().collect()),
+            ),
+            (
+                "value".chars().collect::<Vec<_>>(),
+                JsonValue::String(self.value.chars().collect()),
+            ),
+        ]);
+
+        String::from_utf8(object.format(4)).unwrap()
     }
 }

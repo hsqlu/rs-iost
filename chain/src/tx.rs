@@ -101,7 +101,7 @@ impl Tx {
         }
     }
 
-    pub fn no_std_serialize(self) -> String {
+    pub fn no_std_serialize(self) -> Vec<u8> {
         let object = JsonValue::Object(vec![
             (
                 "time".chars().collect::<Vec<_>>(),
@@ -177,21 +177,46 @@ impl Tx {
                         .collect(),
                 ),
             ),
-            // (
-            //     "signatures".chars().collect::<Vec<_>>(),
-            //     JsonValue::Array(self.signatures.iter().map(|e| {
-            //         JsonValue::String(e.chars().collect::<Vec<_>>())
-            //     }).collect()),
-            // ),
+            (
+                "amount_limit".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.amount_limit
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
+            (
+                "signatures".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.signatures
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
             (
                 "publisher".chars().collect::<Vec<_>>(),
                 JsonValue::String(self.publisher.chars().collect::<Vec<_>>()),
             ),
+            (
+                "publisher_sigs".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.publisher_sigs
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
         ]);
 
-        std::str::from_utf8(&object.format(4)[..])
-            .unwrap()
-            .to_string()
+        String::from_utf8(object.format(4)).unwrap().into_bytes()
     }
 
     #[inline]
@@ -407,7 +432,9 @@ mod test {
             signers: vec![],
             signatures: vec![]
         };
-        dbg!(tx.no_std_serialize());
+        let result = tx.no_std_serialize();
+        println!("{}", String::from_utf8_lossy(&result[..]));
+        // dbg!(tx.no_std_serialize());
     }
 
     #[test]

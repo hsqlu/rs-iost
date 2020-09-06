@@ -158,9 +158,7 @@ impl Action {
             ),
         ]);
 
-        std::str::from_utf8(&object.format(4)[..])
-            .unwrap()
-            .to_string()
+        String::from_utf8(object.format(4)).unwrap()
     }
 }
 
