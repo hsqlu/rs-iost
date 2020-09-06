@@ -553,6 +553,7 @@ dependencies = [
  "iost-derive",
  "iost-keys",
  "itoa",
+ "lite-json",
  "parity-scale-codec",
  "reqwest",
  "serde",
@@ -656,6 +657,23 @@ dependencies = [
  "sha2 0.8.2",
  "subtle 2.2.3",
  "typenum",
+]
+
+[[package]]
+name = "lite-json"
+version = "0.1.2"
+source = "git+https://github.com/xlc/lite-json#d01eaf246a7d6a8df498e5f086666461507b9c2c"
+dependencies = [
+ "lite-parser",
+ "num-traits",
+]
+
+[[package]]
+name = "lite-parser"
+version = "0.1.2"
+source = "git+https://github.com/xlc/lite-json#d01eaf246a7d6a8df498e5f086666461507b9c2c"
+dependencies = [
+ "paste",
 ]
 
 [[package]]
@@ -861,6 +879,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "paste"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "45ca20c77d80be666aef2b45486da86238fabe33e38306bd3118fe4af33fa880"
+dependencies = [
+ "paste-impl",
+ "proc-macro-hack",
+]
+
+[[package]]
+name = "paste-impl"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d95a7db200b97ef370c8e6de0088252f7e0dfff7d047a28528e47456c0fc98b6"
+dependencies = [
+ "proc-macro-hack",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -918,6 +955,12 @@ checksum = "1d6ea3c4595b96363c13943497db34af4460fb474a95c43f4446ad341b8c9785"
 dependencies = [
  "toml",
 ]
+
+[[package]]
+name = "proc-macro-hack"
+version = "0.5.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99c605b9a0adc77b7211c6b1f722dcb613d68d66859a44f3d485a6da332b0598"
 
 [[package]]
 name = "proc-macro2"
