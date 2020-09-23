@@ -1,14 +1,17 @@
 #![allow(unconditional_recursion)]
 use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 
 use crate::{Error, NumberBytes, Read, Write};
 use core::str::FromStr;
 use keys::algorithm;
+use lite_json::{JsonObject, JsonValue, Serialize};
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize as SerSerialize, Serializer};
 
 #[derive(Clone, Default, Debug, NumberBytes, Write, Read)]
-#[cfg_attr(feature = "std", derive(Serialize))]
+#[cfg_attr(feature = "std", derive(SerSerialize))]
 #[iost_root_path = "crate"]
 pub struct Signature {
     /// Encryption algorithm. Currently only "ed25519" and "secp256k1" are supported
@@ -36,6 +39,25 @@ impl Signature {
         let pub_key = base64::decode(self.public_key.as_str()).unwrap();
         let sig = base64::decode(self.signature.as_str()).unwrap();
         algorithm.verify(message, pub_key.as_slice(), sig.as_slice())
+    }
+
+    pub fn no_std_serialize(&self) -> String {
+        let object = JsonValue::Object(vec![
+            (
+                "algorithm".chars().collect::<Vec<_>>(),
+                JsonValue::String(self.algorithm.chars().collect()),
+            ),
+            (
+                "signature".chars().collect::<Vec<_>>(),
+                JsonValue::String(self.signature.chars().collect()),
+            ),
+            (
+                "public_key".chars().collect::<Vec<_>>(),
+                JsonValue::String(self.public_key.chars().collect()),
+            ),
+        ]);
+
+        String::from_utf8(object.format(4)).unwrap()
     }
 }
 

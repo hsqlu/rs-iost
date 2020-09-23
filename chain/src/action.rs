@@ -6,16 +6,16 @@ use crate::Error::JsonParserError;
 use crate::{AccountName, Error, NumberBytes, Read, ReadError, SerializeData, Write, WriteError};
 use codec::{Decode, Encode};
 use core::str::FromStr;
+use lite_json::{JsonValue, Serialize};
 #[cfg(feature = "std")]
 use serde::{
     ser::{Error as SerError, SerializeStruct, Serializer},
-    Deserialize, Serialize,
+    Deserialize, Serialize as SerSerialize,
 };
 #[cfg(feature = "std")]
 use serde_json::to_string as json_to_string;
 
 #[derive(Clone, Default, Debug, PartialEq, Encode, Decode, SerializeData)]
-// #[cfg_attr(feature = "std", derive(Serialize))]
 #[iost_root_path = "crate"]
 pub struct Action {
     /// contract name
@@ -141,12 +141,24 @@ impl Action {
         }
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut result: Vec<u8> = vec![];
-        // result.write(self.contract.as_bytes());
-        // result.write(self.action_name.as_bytes());
-        // result.write(self.data.as_bytes());
-        result
+    pub fn no_std_serialize(&self) -> String {
+        let shadow_action = ShadowAction::from_action(self).unwrap();
+        let object = JsonValue::Object(vec![
+            (
+                "contract".chars().collect::<Vec<_>>(),
+                JsonValue::String(shadow_action.contract.chars().collect()),
+            ),
+            (
+                "action_name".chars().collect::<Vec<_>>(),
+                JsonValue::String(shadow_action.action_name.chars().collect()),
+            ),
+            (
+                "data".chars().collect::<Vec<_>>(),
+                JsonValue::String(shadow_action.data.chars().collect()),
+            ),
+        ]);
+
+        String::from_utf8(object.format(4)).unwrap()
     }
 }
 
@@ -188,7 +200,7 @@ impl NumberBytes for Action {
     }
 }
 
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(SerSerialize, Deserialize))]
 #[derive(Clone, Debug, Read, Write, NumberBytes, Default, SerializeData)]
 #[iost_root_path = "crate"]
 pub struct ActionTransfer {
@@ -222,7 +234,7 @@ impl ActionTransfer {
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Read, Write, NumberBytes, SerializeData)]
-#[cfg_attr(feature = "std", derive(Serialize))]
+#[cfg_attr(feature = "std", derive(SerSerialize))]
 #[iost_root_path = "crate"]
 pub struct ShadowAction {
     /// contract name
@@ -279,7 +291,6 @@ impl FromStr for Action {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::Read;
 
     #[test]
     fn test_action() {
@@ -307,7 +318,24 @@ mod test {
         let mut d = other.to_serialize_data().unwrap();
         let a = Action::read(d.as_ref(), &mut 0).unwrap();
         let s_a = ShadowAction::from_action(&a);
-        dbg!(s_a);
+        assert!(s_a.is_ok());
+    }
+
+    #[test]
+    fn action_serialization() {
+        let action = Action {
+            contract: "iost".to_string().into_bytes(),
+            action_name: "iost".to_string().into_bytes(),
+            data: "".to_string().into_bytes(),
+        };
+        assert_eq!(
+            action.no_std_serialize(),
+            r#"{
+    "contract": "iost",
+    "action_name": "iost",
+    "data": ""
+}"#
+        );
     }
 
     #[test]
@@ -316,11 +344,10 @@ mod test {
         {
             "contract": "token.iost",
             "action_name": "transfer",
-            "data": "["iost", "testaccount", "anothertest", "100", "this is an example transfer"]"
+            "data": "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]"
         }
         "#;
         let result_action: Result<Action, _> = serde_json::from_str(action_str);
-        dbg!(result_action);
-        // assert!(result_action.is_err());
+        assert!(result_action.is_ok());
     }
 }

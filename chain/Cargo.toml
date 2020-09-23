@@ -20,7 +20,7 @@ keys = { package = "iost-keys", path = "../keys", default-features = false }
 serde = { version = "1.0.106", default-features = false, optional = true, features = ["derive", "alloc"] }
 serde_json = { version = "1.0.52", default-features = false, optional = true, features = ["alloc"] }
 sha3 = { version = "0.8.2", default-features = false}
-#lite-json = { version = "0.1.0", git = "https://github.com/xlc/lite-json", default-features = false, features = ["float"]}
+lite-json = { version = "0.1.0", git = "https://github.com/xlc/lite-json", default-features = false, features = ["float"]}
 
 [dev-dependencies]
 tokio = { version = "0.2.6", features = ["macros"] }
