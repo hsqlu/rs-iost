@@ -8,13 +8,13 @@ use crate::{
 };
 use chrono::{DateTime, Duration, TimeZone, Timelike, Utc};
 use keys::algorithm;
+use lite_json::{JsonObject, JsonValue, NumberValue, Serialize};
 #[cfg(feature = "std")]
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{ser::Serializer, Deserialize, Deserializer, Serialize as SerSerialize};
 use sha3::{Digest, Sha3_256};
-// use std::slice::Iter;
 
-#[derive(Clone, Default, Debug, SerializeData)]
-#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(Clone, Default, Debug, Read, Write, NumberBytes, SerializeData)]
+#[cfg_attr(feature = "std", derive(Deserialize, SerSerialize))]
 #[iost_root_path = "crate"]
 pub struct Tx {
     /// Time of transaction. Unixepoch start in nanoseconds
@@ -34,128 +34,13 @@ pub struct Tx {
     /// Token restrictions on transactions. You can specify multiple tokens and a corresponding number limit. If the transaction exceeds these limits, execution fails
     pub amount_limit: Vec<AmountLimit>,
     /// ID of the transaction sender
-    // #[serde(skip)]
-    // #[serde(deserialize_with="parse_color")]
-    // #[serde(default)]
     pub publisher: String,
     /// Publisher's signature. The signing process is as follows. Publisher can provide multiple signatures with different permissions. You can refer to the documentation of the permission system
-    // #[serde(skip)]
-    // #[serde(default)]
-    // #[serde(deserialize_with="parse_color")]
     pub publisher_sigs: Vec<Signature>,
     /// Signer ID other than publisher. It can be empty.
     pub signers: Vec<String>,
     /// Signature of signers. Each signer can have one or more signatures, so the length is not less than the length of signers
     pub signatures: Vec<Signature>,
-}
-
-impl NumberBytes for Tx {
-    #[inline]
-    fn num_bytes(&self) -> usize {
-        48 + self.signers.num_bytes()
-            + self.signers.len() * 4
-            + self.actions.num_bytes()
-            + self.actions.len() * 4
-            + self.amount_limit.num_bytes()
-            + self.amount_limit.len() * 4
-            + self.signatures.num_bytes()
-            + self.signatures.len() * 4
-    }
-}
-
-impl Read for Tx {
-    #[inline]
-    fn read(bytes: &[u8], pos: &mut usize) -> Result<Self, ReadError> {
-        let time = i64::read(bytes, pos)?;
-        let expiration = i64::read(bytes, pos)?;
-        let gas_ratio = f64::read(bytes, pos)?;
-        let gas_limit = f64::read(bytes, pos)?;
-        let delay = i64::read(bytes, pos)?;
-        let chain_id = u32::read(bytes, pos)?;
-
-        // reserved field, default len 0 for now.
-        let _reserved = i32::read(bytes, pos)?;
-
-        let signers_capacity = usize::read(bytes, pos)?;
-        let mut signers: Vec<String> = Vec::new();
-        signers.resize(signers_capacity, String::default());
-        for item in &mut signers {
-            let _size = usize::read(bytes, pos)?;
-            let r = String::read(bytes, pos)?;
-            *item = r;
-        }
-
-        let actions_capacity = usize::read(bytes, pos)?;
-        let mut actions: Vec<Action> = Vec::new();
-        actions.resize(actions_capacity, Action::default());
-
-        for item in &mut actions {
-            let _size = usize::read(bytes, pos)?;
-            let r = Action::read(bytes, pos)?;
-            *item = r;
-        }
-
-        let amount_limits_capacity = usize::read(bytes, pos)?;
-        let mut amount_limit: Vec<AmountLimit> = Vec::new();
-        amount_limit.resize(amount_limits_capacity, AmountLimit::default());
-
-        for item in &mut amount_limit {
-            let _size = usize::read(bytes, pos)?;
-            let r = AmountLimit::read(bytes, pos)?;
-            *item = r;
-        }
-
-        let signatures_capacity = usize::read(bytes, pos)?;
-        let mut signatures: Vec<Signature> = Vec::new();
-        signatures.resize(signatures_capacity, Signature::default());
-
-        for item in &mut signatures {
-            let _size = usize::read(bytes, pos)?;
-            let r = Signature::read(bytes, pos)?;
-            *item = r;
-        }
-
-        Ok(Tx {
-            time,
-            expiration,
-            gas_ratio,
-            gas_limit,
-            delay,
-            chain_id,
-            actions,
-            signers,
-            amount_limit,
-            signatures,
-            publisher: "".to_string(),
-            publisher_sigs: vec![],
-        })
-    }
-}
-
-impl Write for Tx {
-    #[inline]
-    fn write(&self, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError> {
-        self.time.clone().write(bytes, pos);
-        self.expiration.clone().write(bytes, pos);
-        let mut ratio = (self.gas_ratio * 100.0) as i64;
-        ratio.write(bytes, pos);
-        let mut limit = (self.gas_limit * 100.0) as i64;
-        limit.write(bytes, pos);
-        self.delay.clone().write(bytes, pos);
-        self.chain_id.clone().write(bytes, pos);
-
-        // reserved field
-        0_i32.write(bytes, pos);
-
-        self.signers.len().write(bytes, pos)?;
-        expand::<String>(&self.signers, bytes, pos)?;
-        self.actions.len().write(bytes, pos);
-        expand::<Action>(&self.actions, bytes, pos)?;
-        self.amount_limit.len().write(bytes, pos);
-        expand::<AmountLimit>(&self.amount_limit, bytes, pos)?;
-        self.signatures.len().write(bytes, pos);
-        expand::<Signature>(&self.signatures, bytes, pos)
-    }
 }
 
 fn expand<T>(x: &Vec<T>, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError>
@@ -170,6 +55,28 @@ where
 }
 
 impl Tx {
+    pub fn new(time: i64, expiration: i64, chain_id: u32, actions: Vec<Action>) -> Self {
+        let amount_limit = AmountLimit {
+            token: "*".to_string(),
+            value: "unlimited".to_string(),
+        };
+
+        Tx {
+            time,
+            expiration,
+            gas_ratio: 1.0,
+            gas_limit: 1000000.0,
+            delay: 0,
+            chain_id,
+            actions,
+            amount_limit: vec![amount_limit],
+            publisher: "".to_string(),
+            publisher_sigs: vec![],
+            signers: vec![],
+            signatures: vec![],
+        }
+    }
+
     #[cfg(feature = "std")]
     pub fn from_action(actions: Vec<Action>) -> Self {
         let amount_limit = AmountLimit {
@@ -181,8 +88,8 @@ impl Tx {
         Tx {
             time,
             expiration,
-            gas_ratio: 1000000.0,
-            gas_limit: 1.0,
+            gas_ratio: 1.0,
+            gas_limit: 1000000.0,
             delay: 0,
             chain_id: 1024,
             actions,
@@ -194,6 +101,140 @@ impl Tx {
         }
     }
 
+    pub fn no_std_serialize(self) -> Vec<u8> {
+        let object = JsonValue::Object(vec![
+            (
+                "time".chars().collect::<Vec<_>>(),
+                JsonValue::Number(NumberValue {
+                    integer: self.time,
+                    fraction: 0,
+                    fraction_length: 0,
+                    exponent: 0,
+                }),
+            ),
+            (
+                "expiration".chars().collect::<Vec<_>>(),
+                JsonValue::Number(NumberValue {
+                    integer: self.expiration,
+                    fraction: 0,
+                    fraction_length: 0,
+                    exponent: 0,
+                }),
+            ),
+            (
+                "gas_ratio".chars().collect::<Vec<_>>(),
+                JsonValue::Number(NumberValue {
+                    integer: self.gas_ratio as i64,
+                    fraction: 0,
+                    fraction_length: 0,
+                    exponent: 0,
+                }),
+            ),
+            (
+                "gas_limit".chars().collect::<Vec<_>>(),
+                JsonValue::Number(NumberValue {
+                    integer: self.gas_limit as i64,
+                    fraction: 0,
+                    fraction_length: 0,
+                    exponent: 0,
+                }),
+            ),
+            (
+                "delay".chars().collect::<Vec<_>>(),
+                JsonValue::Number(NumberValue {
+                    integer: self.delay,
+                    fraction: 0,
+                    fraction_length: 0,
+                    exponent: 0,
+                }),
+            ),
+            (
+                "chain_id".chars().collect::<Vec<_>>(),
+                JsonValue::Number(NumberValue {
+                    integer: self.chain_id as i64,
+                    fraction: 0,
+                    fraction_length: 0,
+                    exponent: 0,
+                }),
+            ),
+            (
+                "signers".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.signers
+                        .iter()
+                        .map(|e| JsonValue::String(e.chars().collect::<Vec<_>>()))
+                        .collect(),
+                ),
+            ),
+            (
+                "actions".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.actions
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
+            (
+                "amount_limit".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.amount_limit
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
+            (
+                "signatures".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.signatures
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
+            (
+                "publisher".chars().collect::<Vec<_>>(),
+                JsonValue::String(self.publisher.chars().collect::<Vec<_>>()),
+            ),
+            (
+                "publisher_sigs".chars().collect::<Vec<_>>(),
+                JsonValue::Array(
+                    self.publisher_sigs
+                        .iter()
+                        .map(|e| {
+                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
+                        })
+                        .collect(),
+                ),
+            ),
+        ]);
+
+        String::from_utf8(object.format(4)).unwrap().into_bytes()
+    }
+
+    #[inline]
+    fn number_bytes(&self, with_sign: bool) -> usize {
+        let res = 48
+            + self.signers.num_bytes()
+            + self.signers.len() * 4
+            + self.actions.num_bytes()
+            + self.actions.len() * 4
+            + self.amount_limit.num_bytes()
+            + self.amount_limit.len() * 4;
+        if with_sign {
+            res + self.signatures.num_bytes() + self.signatures.len() * 4
+        } else {
+            res
+        }
+    }
+
     fn write(&self, bytes: &mut [u8], pos: &mut usize, with_sign: bool) -> Result<(), WriteError> {
         self.time.clone().write(bytes, pos);
         self.expiration.clone().write(bytes, pos);
@@ -202,7 +243,7 @@ impl Tx {
         let mut limit = (self.gas_limit * 100.0) as i64;
         limit.write(bytes, pos);
         self.delay.clone().write(bytes, pos);
-        self.chain_id.clone().write(bytes, pos);
+        (self.chain_id.clone() as i32).write(bytes, pos);
 
         // reserved field
         0_i32.write(bytes, pos);
@@ -221,14 +262,13 @@ impl Tx {
     }
 
     pub fn customized_to_serialize_data(&self, with_sign: bool) -> crate::Result<Vec<u8>> {
-        let mut data = vec![0u8; self.num_bytes()];
+        let mut data = vec![0u8; self.number_bytes(with_sign)];
         self.write(&mut data, &mut 0, with_sign)
             .map_err(crate::Error::BytesWriteError)
             .unwrap();
         Ok(data.to_vec())
     }
 
-    #[cfg(feature = "std")]
     pub fn sign(
         &mut self,
         account_name: String,
@@ -249,7 +289,6 @@ impl Tx {
         Ok(())
     }
 
-    #[cfg(feature = "std")]
     pub fn verify(&self) -> crate::Result<()> {
         for signature in &self.signatures {
             let tx_bytes = self.customized_to_serialize_data(false).unwrap();
@@ -273,57 +312,138 @@ impl Tx {
     }
 }
 
-// fn parse_color<'de, D>(d: D) -> Result<String, D::Error>
-// where
-//     D: Deserializer<'de>,
-// {
-//     Deserialize::deserialize(d).map(|x: Option<_>| x.unwrap_or("".to_string()))
-// }
-
 #[cfg(test)]
 mod test {
     use super::*;
+    use base58::FromBase58;
+
+    #[test]
+    fn test_bytes_serialization() {
+        let tx = Tx::from_action(vec![Action {
+            contract: "token.iost".to_string().into_bytes(),
+            action_name: "transfer".to_string().into_bytes(),
+            data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
+        }]);
+
+        let mut data = tx.to_serialize_data().unwrap();
+        // assert!(data.is_ok());
+        dbg!(tx.num_bytes());
+        dbg!(data.len());
+
+        let other_tx = Tx::read(&mut data, &mut 0).unwrap();
+        dbg!(other_tx);
+    }
+
+    #[test]
+    fn test_send_tx() {
+        let action = Action::transfer("lispczz4", "lispczz5", "12", "").unwrap();
+        // let mut tx = Tx::from_action(vec![Action {
+        //     contract: "token.iost".to_string().into_bytes(),
+        //     action_name: "transfer".to_string().into_bytes(),
+        //     data: r#"["iost","lispczz4","lispczz5","8",""]"#.to_string().into_bytes(),
+        // }]);
+
+        let mut tx = Tx::from_action(vec![action]);
+        // let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
+        let sec_key = "xjggJ3TrLXz7qEwrGG3Rc4Fz59imjixhXpViq9W7Ncx"
+            .from_base58()
+            .unwrap();
+        // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
+        tx.sign(
+            "lispczz4".to_string(),
+            algorithm::SECP256K1,
+            sec_key.as_slice(),
+        );
+        let result = tx.verify();
+        assert!(result.is_ok());
+
+        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        // dbg!(tx_string);
+        let client = reqwest::blocking::Client::new();
+        let res = client
+            .post("http://127.0.0.1:30001/sendTx")
+            .body(tx_string)
+            .send()
+            .unwrap();
+        dbg!(res.text());
+    }
 
     #[test]
     fn test_tx() {
         let mut tx = Tx {
-            time: 1544013436179000000,
-            expiration: 1544013526179000000,
-            gas_ratio: 100.0,
-            gas_limit: 123400.0,
+            time: 1598918258274417000,
+            expiration: 1598918348274417000,
+            gas_ratio: 1.0,
+            gas_limit: 1000000.0,
             delay: 0,
-            chain_id: 0,
+            chain_id: 1024,
             actions: vec![Action {
-                contract: "cont".to_string(),
-                action_name: "abi".to_string(),
-                data: "[]".to_string(),
+                contract: "token.iost".to_string().into_bytes(),
+                action_name: "transfer".to_string().into_bytes(),
+                data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
             }],
             amount_limit: vec![AmountLimit {
-                token: "iost".to_string(),
-                value: "123".to_string(),
+                token: "*".to_string(),
+                value: "unlimited".to_string(),
             }],
             publisher: "".to_string(),
             publisher_sigs: vec![],
-            signers: vec!["abc".to_string()],
-
+            signers: vec![],
             signatures: vec![],
         };
-        let data: Vec<u8> = tx.to_serialize_data().unwrap();
-
+        // let data: Vec<u8> = tx.to_serialize_data().unwrap();
+        let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
+        // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
+        tx.sign("admin".to_string(), algorithm::ED25519, sec_key.as_slice());
         // let s = String::from_utf8(data.clone());
-        dbg!(hex::encode(data.as_slice()));
-        // create a SHA3-256 object
-        let mut hasher = Sha3_256::new();
+        // dbg!(hex::encode(data.as_slice()));
+        let result = tx.verify();
+        assert!(result.is_ok());
 
+        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        dbg!(tx_string);
+        // create a SHA3-256 object
+        // let mut hasher = Sha3_256::new();
+        // "Fpl2AbiSgVxJzhOU1ASofiYoLf0uqXlIWz0hXroxd0i38BfJVErzVdR7mQP1SEXk1sKz98i+fPDyPmRY56WbDA=="
+
+        // "6BK1LqmtXLqamvA6/MbylCpFJLDfPANE3BlQcoMWcMQ="
         // write input message
         // let data = result.unwrap();
-        hasher.input(data);
-        let result = hasher.result();
+        // hasher.input(data);
+        // let result = hasher.result();
         // dbg!(result.as_slice());
         // assert_eq!(
         //     "93c24341c06cd7a23023d278dd044bf736730ac5e32d432aff05a00ac3df85f8",
         //     hex::encode(result.as_slice())
         // );
+    }
+
+    #[test]
+    fn test_no_std_serialize() {
+        let mut tx = Tx {
+            time: 1544709662543340000,
+            expiration: 1544709692318715000,
+            gas_ratio: 1.0,
+            gas_limit: 500000.0,
+            delay: 0,
+            chain_id: 1024,
+            actions: vec![ Action {
+                contract: "token.iost".to_string().into_bytes(),
+                action_name: "transfer".to_string().into_bytes(),
+                data: r#"["iost", "testaccount", "anothertest", "100", "this is an example transfer"]"#.to_string().into_bytes(),
+            }],
+            amount_limit: vec![ AmountLimit {
+                token: "*".to_string(),
+                value: "unlimited".to_string()
+            }],
+            publisher: "".to_string(),
+            publisher_sigs: vec![],
+            signers: vec![],
+            signatures: vec![]
+        };
+        let result = tx.no_std_serialize();
+        println!("{}", String::from_utf8_lossy(&result[..]));
+        // dbg!(tx.no_std_serialize());
     }
 
     #[test]
@@ -336,9 +456,9 @@ mod test {
             delay: 0,
             chain_id: 1024,
             actions: vec![ Action {
-                contract: "token.iost".to_string(),
-                action_name: "transfer".to_string(),
-                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string(),
+                contract: "token.iost".to_string().into_bytes(),
+                action_name: "transfer".to_string().into_bytes(),
+                data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string().into_bytes(),
             }],
             amount_limit: vec![ AmountLimit {
                 token: "*".to_string(),
@@ -353,11 +473,9 @@ mod test {
         let sec_key = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
         tx.sign(
             "testaccount".to_string(),
-            algorithm::SECP256K1,
+            algorithm::ED25519,
             sec_key.as_slice(),
         );
-        // let tx_string = serde_json::to_string_pretty(&tx).unwrap();
-        // dbg!(&tx_string);
         assert!(tx.verify().is_ok());
 
         let tx_str = r#"
