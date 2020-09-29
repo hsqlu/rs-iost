@@ -123,7 +123,7 @@ impl Action {
         Ok(Action {
             contract: contract.as_ref().as_bytes().to_vec(),
             action_name: action_name.as_ref().as_bytes().to_vec(),
-            data: "".as_bytes().to_vec(),
+            data: action_transfer.no_std_serialize().as_bytes().to_vec(),
         })
     }
 
@@ -230,6 +230,20 @@ impl ActionTransfer {
             amount: amount.as_ref().to_string(),
             memo: memo.as_ref().to_string(),
         })
+    }
+
+    pub fn no_std_serialize(&self) -> String {
+        let mut vec: Vec<JsonValue> = Vec::new();
+        vec.push(JsonValue::String(
+            self.token_type.chars().collect::<Vec<_>>(),
+        ));
+        vec.push(JsonValue::String(self.from.chars().collect::<Vec<_>>()));
+        vec.push(JsonValue::String(self.to.chars().collect::<Vec<_>>()));
+        vec.push(JsonValue::String(self.amount.chars().collect::<Vec<_>>()));
+        vec.push(JsonValue::String(self.memo.chars().collect::<Vec<_>>()));
+        let object = JsonValue::Array(vec);
+
+        String::from_utf8(object.format(4)).unwrap()
     }
 }
 
@@ -349,5 +363,12 @@ mod test {
         "#;
         let result_action: Result<Action, _> = serde_json::from_str(action_str);
         assert!(result_action.is_ok());
+    }
+
+    #[test]
+    fn test_action_transfer() {
+        let action = Action::transfer("lispczz4", "lispczz5", "10", "").unwrap();
+        let data = action.no_std_serialize();
+        dbg!(data);
     }
 }
