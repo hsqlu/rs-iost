@@ -14,7 +14,6 @@ fn print_hex() {
     dbg!(hex::encode(raw_string.as_slice()));
 }
 
-
 #[test]
 fn should_action_serialization_successful() {
     let action = Action::new(

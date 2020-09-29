@@ -336,16 +336,24 @@ mod test {
 
     #[test]
     fn test_send_tx() {
-        let mut tx = Tx::from_action(vec![Action {
-            contract: "token.iost".to_string().into_bytes(),
-            action_name: "transfer".to_string().into_bytes(),
-            data: r#"["iost","lispczz4","lispczz5","12",""]"#.to_string().into_bytes(),
-        }]);
+        let action = Action::transfer("lispczz4", "lispczz5", "12", "").unwrap();
+        // let mut tx = Tx::from_action(vec![Action {
+        //     contract: "token.iost".to_string().into_bytes(),
+        //     action_name: "transfer".to_string().into_bytes(),
+        //     data: r#"["iost","lispczz4","lispczz5","8",""]"#.to_string().into_bytes(),
+        // }]);
 
+        let mut tx = Tx::from_action(vec![action]);
         // let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
-        let sec_key = "xjggJ3TrLXz7qEwrGG3Rc4Fz59imjixhXpViq9W7Ncx".from_base58().unwrap();
+        let sec_key = "xjggJ3TrLXz7qEwrGG3Rc4Fz59imjixhXpViq9W7Ncx"
+            .from_base58()
+            .unwrap();
         // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
-        tx.sign("lispczz4".to_string(), algorithm::SECP256K1, sec_key.as_slice());
+        tx.sign(
+            "lispczz4".to_string(),
+            algorithm::SECP256K1,
+            sec_key.as_slice(),
+        );
         let result = tx.verify();
         assert!(result.is_ok());
 
