@@ -7,6 +7,9 @@ pub mod action;
 pub mod amount_limit;
 pub mod block;
 pub mod bytes;
+
+mod chain_test;
+
 pub mod error;
 pub mod fixed;
 pub mod frozen_balance;

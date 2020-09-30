@@ -41,7 +41,7 @@ impl Signature {
         algorithm.verify(message, pub_key.as_slice(), sig.as_slice())
     }
 
-    pub fn no_std_serialize(&self) -> String {
+    pub fn no_std_serialize(&self) -> JsonValue {
         let object = JsonValue::Object(vec![
             (
                 "algorithm".chars().collect::<Vec<_>>(),
@@ -56,8 +56,8 @@ impl Signature {
                 JsonValue::String(self.public_key.chars().collect()),
             ),
         ]);
-
-        String::from_utf8(object.format(4)).unwrap()
+        object
+        // String::from_utf8(object.format(4)).unwrap()
     }
 }
 

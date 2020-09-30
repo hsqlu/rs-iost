@@ -141,7 +141,7 @@ impl Action {
         }
     }
 
-    pub fn no_std_serialize(&self) -> String {
+    pub fn no_std_serialize(&self) -> JsonValue {
         let shadow_action = ShadowAction::from_action(self).unwrap();
         let object = JsonValue::Object(vec![
             (
@@ -157,8 +157,8 @@ impl Action {
                 JsonValue::String(shadow_action.data.chars().collect()),
             ),
         ]);
-
-        String::from_utf8(object.format(4)).unwrap()
+        object
+        // String::from_utf8(object.format(4)).unwrap()
     }
 }
 
@@ -343,7 +343,7 @@ mod test {
             data: "".to_string().into_bytes(),
         };
         assert_eq!(
-            action.no_std_serialize(),
+            String::from_utf8(action.no_std_serialize().format(4)).unwrap(),
             r#"{
     "contract": "iost",
     "action_name": "iost",
@@ -365,10 +365,10 @@ mod test {
         assert!(result_action.is_ok());
     }
 
-    #[test]
-    fn test_action_transfer() {
-        let action = Action::transfer("lispczz4", "lispczz5", "10", "").unwrap();
-        let data = action.no_std_serialize();
-        dbg!(data);
-    }
+    // #[test]
+    // fn test_action_transfer() {
+    //     let action = Action::transfer("lispczz4", "lispczz5", "10", "").unwrap();
+    //     let data = action.no_std_serialize();
+    //     dbg!(data);
+    // }
 }

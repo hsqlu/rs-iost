@@ -65,7 +65,7 @@ impl AmountLimit {
         AmountLimit { token, value }
     }
 
-    pub fn no_std_serialize(&self) -> String {
+    pub fn no_std_serialize(&self) -> JsonValue {
         let object = JsonValue::Object(vec![
             (
                 "token".chars().collect::<Vec<_>>(),
@@ -76,7 +76,7 @@ impl AmountLimit {
                 JsonValue::String(self.value.chars().collect()),
             ),
         ]);
-
-        String::from_utf8(object.format(4)).unwrap()
+        object
+        // String::from_utf8(object.format(4)).unwrap()
     }
 }
