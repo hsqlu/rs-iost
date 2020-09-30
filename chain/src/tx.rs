@@ -101,7 +101,7 @@ impl Tx {
         }
     }
 
-    pub fn no_std_serialize(self) -> Vec<u8> {
+    pub fn no_std_serialize_vec(self) -> Vec<u8> {
         let object = JsonValue::Object(vec![
             (
                 "time".chars().collect::<Vec<_>>(),
@@ -168,23 +168,14 @@ impl Tx {
             ),
             (
                 "actions".chars().collect::<Vec<_>>(),
-                JsonValue::Array(
-                    self.actions
-                        .iter()
-                        .map(|e| {
-                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
-                        })
-                        .collect(),
-                ),
+                JsonValue::Array(self.actions.iter().map(|e| e.no_std_serialize()).collect()),
             ),
             (
                 "amount_limit".chars().collect::<Vec<_>>(),
                 JsonValue::Array(
                     self.amount_limit
                         .iter()
-                        .map(|e| {
-                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
-                        })
+                        .map(|e| e.no_std_serialize())
                         .collect(),
                 ),
             ),
@@ -193,9 +184,7 @@ impl Tx {
                 JsonValue::Array(
                     self.signatures
                         .iter()
-                        .map(|e| {
-                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
-                        })
+                        .map(|e| e.no_std_serialize())
                         .collect(),
                 ),
             ),
@@ -208,15 +197,16 @@ impl Tx {
                 JsonValue::Array(
                     self.publisher_sigs
                         .iter()
-                        .map(|e| {
-                            JsonValue::String(e.no_std_serialize().chars().collect::<Vec<_>>())
-                        })
+                        .map(|e| e.no_std_serialize())
                         .collect(),
                 ),
             ),
         ]);
+        object.format(4)
+    }
 
-        String::from_utf8(object.format(4)).unwrap().into_bytes()
+    pub fn no_std_serialize(self) -> String {
+        String::from_utf8(self.no_std_serialize_vec()).unwrap()
     }
 
     #[inline]
@@ -336,7 +326,7 @@ mod test {
 
     #[test]
     fn test_send_tx() {
-        let action = Action::transfer("lispczz4", "lispczz5", "12", "").unwrap();
+        let action = Action::transfer("lispczz4", "lispczz5", "10", "").unwrap();
         // let mut tx = Tx::from_action(vec![Action {
         //     contract: "token.iost".to_string().into_bytes(),
         //     action_name: "transfer".to_string().into_bytes(),
@@ -357,8 +347,10 @@ mod test {
         let result = tx.verify();
         assert!(result.is_ok());
 
-        let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        // let tx_string = serde_json::to_string_pretty(&tx).unwrap();
+        let tx_string = tx.no_std_serialize();
         // dbg!(tx_string);
+        // dbg!(tx.no_std_serialize());
         let client = reqwest::blocking::Client::new();
         let res = client
             .post("http://127.0.0.1:30001/sendTx")
@@ -442,8 +434,8 @@ mod test {
             signatures: vec![]
         };
         let result = tx.no_std_serialize();
-        println!("{}", String::from_utf8_lossy(&result[..]));
-        // dbg!(tx.no_std_serialize());
+        // println!("{}", String::from_utf8_lossy(&result[..]));
+        dbg!(result);
     }
 
     #[test]
