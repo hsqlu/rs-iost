@@ -2,7 +2,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 use crate::{
-    Action, AmountLimit, NumberBytes, Read, ReadError, Signature, TxReceipt, Write, WriteError,
+    AmountLimit, IostAction, NumberBytes, Read, ReadError, Signature, TxReceipt, Write, WriteError,
 };
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,7 @@ pub struct Transaction {
     /// id of blockchain on which the transaction could be executed
     pub chain_id: i32,
     /// the smallest transaction execution unit
-    pub actions: Vec<Action>,
+    pub actions: Vec<IostAction>,
     /// list of transaction signatures
     pub signers: Vec<String>,
     /// sender of the transaction, who is responsible for fees

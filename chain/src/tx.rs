@@ -4,7 +4,8 @@ use alloc::vec::Vec;
 
 use crate::Error::{BytesReadError, InvalidPublisherSignature, InvalidSignature};
 use crate::{
-    Action, AmountLimit, NumberBytes, Read, ReadError, SerializeData, Signature, Write, WriteError,
+    AmountLimit, IostAction, NumberBytes, Read, ReadError, SerializeData, Signature, Write,
+    WriteError,
 };
 use chrono::{DateTime, Duration, TimeZone, Timelike, Utc};
 use keys::algorithm;
@@ -30,7 +31,7 @@ pub struct Tx {
     /// Network ID
     pub chain_id: u32,
     /// Specific call in transaction
-    pub actions: Vec<Action>,
+    pub actions: Vec<IostAction>,
     /// Token restrictions on transactions. You can specify multiple tokens and a corresponding number limit. If the transaction exceeds these limits, execution fails
     pub amount_limit: Vec<AmountLimit>,
     /// ID of the transaction sender
@@ -55,7 +56,7 @@ where
 }
 
 impl Tx {
-    pub fn new(time: i64, expiration: i64, chain_id: u32, actions: Vec<Action>) -> Self {
+    pub fn new(time: i64, expiration: i64, chain_id: u32, actions: Vec<IostAction>) -> Self {
         let amount_limit = AmountLimit {
             token: "*".to_string(),
             value: "unlimited".to_string(),
@@ -78,7 +79,7 @@ impl Tx {
     }
 
     #[cfg(feature = "std")]
-    pub fn from_action(actions: Vec<Action>) -> Self {
+    pub fn from_action(actions: Vec<IostAction>) -> Self {
         let amount_limit = AmountLimit {
             token: "*".to_string(),
             value: "unlimited".to_string(),
@@ -241,7 +242,7 @@ impl Tx {
         self.signers.len().write(bytes, pos)?;
         expand::<String>(&self.signers, bytes, pos);
         self.actions.len().write(bytes, pos);
-        expand::<Action>(&self.actions, bytes, pos);
+        expand::<IostAction>(&self.actions, bytes, pos);
         self.amount_limit.len().write(bytes, pos);
         expand::<AmountLimit>(&self.amount_limit, bytes, pos);
         if with_sign {
@@ -309,7 +310,7 @@ mod test {
 
     #[test]
     fn test_bytes_serialization() {
-        let tx = Tx::from_action(vec![Action {
+        let tx = Tx::from_action(vec![IostAction {
             contract: "token.iost".to_string().into_bytes(),
             action_name: "transfer".to_string().into_bytes(),
             data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
@@ -326,7 +327,7 @@ mod test {
 
     #[test]
     fn test_send_tx() {
-        let action = Action::transfer("lispczz4", "lispczz5", "10", "").unwrap();
+        let action = IostAction::transfer("lispczz4", "lispczz5", "10", "").unwrap();
         // let mut tx = Tx::from_action(vec![Action {
         //     contract: "token.iost".to_string().into_bytes(),
         //     action_name: "transfer".to_string().into_bytes(),
@@ -369,7 +370,7 @@ mod test {
             gas_limit: 1000000.0,
             delay: 0,
             chain_id: 1024,
-            actions: vec![Action {
+            actions: vec![IostAction {
                 contract: "token.iost".to_string().into_bytes(),
                 action_name: "transfer".to_string().into_bytes(),
                 data: r#"["iost","admin","lispczz3","100",""]"#.to_string().into_bytes(),
@@ -419,7 +420,7 @@ mod test {
             gas_limit: 500000.0,
             delay: 0,
             chain_id: 1024,
-            actions: vec![ Action {
+            actions: vec![ IostAction {
                 contract: "token.iost".to_string().into_bytes(),
                 action_name: "transfer".to_string().into_bytes(),
                 data: r#"["iost", "testaccount", "anothertest", "100", "this is an example transfer"]"#.to_string().into_bytes(),
@@ -447,7 +448,7 @@ mod test {
             gas_limit: 500000.0,
             delay: 0,
             chain_id: 1024,
-            actions: vec![ Action {
+            actions: vec![ IostAction {
                 contract: "token.iost".to_string().into_bytes(),
                 action_name: "transfer".to_string().into_bytes(),
                 data: "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]".to_string().into_bytes(),
