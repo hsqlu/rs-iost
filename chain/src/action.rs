@@ -113,7 +113,6 @@ impl IostAction {
         }
     }
 
-    // #[cfg(feature = "std")]
     pub fn from_str<T: AsRef<str>>(
         contract: T,
         action_name: T,
@@ -284,9 +283,6 @@ pub trait ToAction: Write + NumberBytes {
         action_name: String,
         data: String,
     ) -> core::result::Result<IostAction, Error> {
-        // let mut data = vec![0_u8; self.num_bytes()];
-        // self.write(&mut data, &mut 0).unwrap();
-
         Ok(IostAction {
             contract: contract.into_bytes(),
             action_name: action_name.into_bytes(),
@@ -363,17 +359,10 @@ mod test {
         {
             "contract": "token.iost",
             "action_name": "transfer",
-            "data": "[\"iost\", \"testaccount\", \"anothertest\", \"100\", \"this is an example transfer\"]"
+            "data": "[\"iost\", \"lispczz5\", \"bifrost\", \"1\", \"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST\"]"
         }
         "#;
         let result_action: Result<IostAction, _> = serde_json::from_str(action_str);
         assert!(result_action.is_ok());
     }
-
-    // #[test]
-    // fn test_action_transfer() {
-    //     let action = Action::transfer("lispczz4", "lispczz5", "10", "").unwrap();
-    //     let data = action.no_std_serialize();
-    //     dbg!(data);
-    // }
 }
