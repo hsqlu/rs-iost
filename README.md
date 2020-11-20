@@ -93,3 +93,17 @@ mod test {
 }
 ~~~
 
+## Bifrost to IOST
+
+1. IOST initial setting
+
+
+```
+ iwallet --server 127.0.0.1:30002 --account admin --amount_limit "ram:1000|iost:10" --sign_algo secp256k1  account create bifrost --initial_balance 0 --initial_gas_pledge 10 --initial_ram 0
+```
+
+
+```
+iwallet --account lispczz5 call 'token.iost' 'transfer' '["iost","lispczz5","bifrost","400","5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST"]'
+
+```
