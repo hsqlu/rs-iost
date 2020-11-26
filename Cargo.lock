@@ -1458,8 +1458,8 @@ dependencies = [
  "crypto",
  "digest 0.8.1",
  "hex",
- "iost-derive 0.2.1",
- "iost-keys 0.1.0",
+ "iost-derive",
+ "iost-keys",
  "itoa",
  "lite-json",
  "parity-scale-codec",
@@ -1471,29 +1471,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "iost-chain"
-version = "0.1.0"
-source = "git+https://github.com/hsqlu/rs-iost#f2a7e7dd6b6c3f62262b699282fddd0146d273a6"
-dependencies = [
- "async-trait",
- "base58",
- "base64 0.12.3",
- "byteorder",
- "chrono",
- "crypto",
- "digest 0.8.1",
- "hex",
- "iost-derive 0.2.1 (git+https://github.com/hsqlu/rs-iost)",
- "iost-keys 0.1.0 (git+https://github.com/hsqlu/rs-iost)",
- "itoa",
- "lite-json",
- "parity-scale-codec",
- "serde",
- "serde_json",
- "sha3 0.8.2",
-]
-
-[[package]]
 name = "iost-derive"
 version = "0.2.1"
 dependencies = [
@@ -1503,34 +1480,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "iost-derive"
-version = "0.2.1"
-source = "git+https://github.com/hsqlu/rs-iost#f2a7e7dd6b6c3f62262b699282fddd0146d273a6"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "iost-keys"
 version = "0.1.0"
-dependencies = [
- "base58",
- "base64 0.12.3",
- "bitcoin_hashes",
- "byteorder",
- "ed25519-dalek",
- "hex",
- "libsecp256k1 0.3.5 (git+https://github.com/bifrost-codes/libsecp256k1.git)",
- "rand 0.7.3",
- "signature",
-]
-
-[[package]]
-name = "iost-keys"
-version = "0.1.0"
-source = "git+https://github.com/hsqlu/rs-iost#f2a7e7dd6b6c3f62262b699282fddd0146d273a6"
 dependencies = [
  "base58",
  "base64 0.12.3",
@@ -3122,7 +3073,7 @@ name = "rpc"
 version = "0.1.0"
 dependencies = [
  "futures 0.3.7",
- "iost-chain 0.1.0 (git+https://github.com/hsqlu/rs-iost)",
+ "iost-chain",
  "once_cell",
  "parity-scale-codec",
  "serde_json",

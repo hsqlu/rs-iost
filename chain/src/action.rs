@@ -306,6 +306,8 @@ impl FromStr for IostAction {
 #[cfg(test)]
 mod test {
     use super::*;
+    use core::iter::FromIterator;
+    use lite_json::parse_json;
 
     #[test]
     fn test_action() {
@@ -364,5 +366,33 @@ mod test {
         "#;
         let result_action: Result<IostAction, _> = serde_json::from_str(action_str);
         assert!(result_action.is_ok());
+        let action = result_action.unwrap();
+        let data = core::str::from_utf8(&action.data).unwrap();
+
+        let mut action_transfer: ActionTransfer = Default::default();
+        let node_info = parse_json(data).unwrap();
+
+        match node_info {
+            JsonValue::Array(ref json) => {
+                for (i, item) in json.iter().enumerate() {
+                    match item {
+                        JsonValue::String(ref chars) => {
+                            let v = String::from_iter(chars.iter());
+                            match i {
+                                0 => action_transfer.token_type = v,
+                                1 => action_transfer.from = v,
+                                2 => action_transfer.to = v,
+                                3 => action_transfer.amount = v,
+                                4 => action_transfer.memo = v,
+                                _ => (),
+                            }
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            _ => (),
+        }
+        dbg!(action_transfer);
     }
 }

@@ -13,6 +13,8 @@ fn print_hex() {
     let raw_string = "lispczz5".to_string().into_bytes();
     dbg!(hex::encode(raw_string.as_slice()));
 
+    // 0x6c697370637a7a35
+
     dbg!(String::from_utf8(
         "fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860e"
             .as_bytes()

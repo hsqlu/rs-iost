@@ -72,9 +72,11 @@ async fn call() -> Result<String, crate::Error> {
         {
             "contract": "token.iost",
             "action_name": "transfer",
-            "data": "[\"iost\", \"lispczz5\", \"bifrost\", \"1\", \"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST\"]"
+            "data": "[\"iost\", \"lispczz5\", \"bifrost\", \"20\", \"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST\"]"
         }
         "#;
+
+    // 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST
     let result_action: IostAction = serde_json::from_str(action_str).unwrap();
 
     let call = ProveActionCall::<BifrostRuntime> {
