@@ -43,6 +43,7 @@ async fn global_client(
 #[derive(Clone, Debug, PartialEq, Call, Encode)]
 pub struct ProveActionCall<T: BridgeIost> {
     action: IostAction,
+    trx_id: Vec<u8>,
     pub _runtime: PhantomData<T>,
 }
 
@@ -51,13 +52,11 @@ pub trait BridgeIost: System {}
 
 impl BridgeIost for BifrostRuntime {}
 
-async fn call() -> Result<String, crate::Error> {
-    let client: Client<BifrostRuntime> = subxt::ClientBuilder::new()
-        .set_url("ws://127.0.0.1:9944")
-        .build()
-        .await
-        .map_err(|e| dbg!(e))
-        .unwrap();
+async fn call(
+    client: Client<BifrostRuntime>,
+    action_data: &str,
+    trx_id: Vec<u8>,
+) -> Result<String, crate::Error> {
     let signer = Pair::from_string("//Alice".as_ref(), None)
         .map_err(|_| crate::Error::WrongSudoSeed)
         .unwrap();
@@ -68,25 +67,19 @@ async fn call() -> Result<String, crate::Error> {
         .await
         .map_err(|_| crate::Error::WrongSudoSeed)?
         .nonce;
-    let action_str = r#"
-        {
-            "contract": "token.iost",
-            "action_name": "transfer",
-            "data": "[\"iost\", \"lispczz5\", \"bifrost\", \"20\", \"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST\"]"
-        }
-        "#;
 
     // 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST
-    let result_action: IostAction = serde_json::from_str(action_str).unwrap();
+    let result_action: IostAction = serde_json::from_str(action_data).unwrap();
 
     let call = ProveActionCall::<BifrostRuntime> {
         action: result_action,
+        trx_id: trx_id,
         _runtime: PhantomData,
     };
+
     match client.submit(call.clone(), &signer).await {
         Ok(trx_id) => Ok(trx_id.to_string()),
         Err(SubxtErr::Rpc(e)) => {
-            //			signer.increment_nonce();
             let trx_id = client.submit(call, &signer).await.map_err(|e| {
                 println!("error is: {:?}", e.to_string());
                 crate::Error::SubxtError("failed to commit this transaction")
@@ -102,19 +95,83 @@ async fn call() -> Result<String, crate::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use futures::StreamExt;
     use subxt::{
-        system::{AccountStoreExt, System, SystemEventsDecoder},
+        system::{System, SystemEventsDecoder},
         Call, Client, DefaultNodeRuntime as BifrostRuntime, PairSigner,
     };
 
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    const TO_BIFROST: &str = r#"
+        {
+            "contract": "token.iost",
+            "action_name": "transfer",
+            "data": "[\"iost\", \"lispczz5\", \"bifrost\", \"20\", \"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST\"]"
+        }
+        "#;
+
+    const TO_IOST: &str = r#"
+        {
+            "contract": "token.iost",
+            "action_name": "transfer",
+            "data": "[\"iost\", \"bifrost\", \"lispczz5\", \"9\", \"5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST\"]"
+        }
+        "#;
+
+    async fn build_client() -> Client<BifrostRuntime> {
+        subxt::ClientBuilder::new()
+            .set_url("ws://127.0.0.1:9944")
+            .build()
+            .await
+            .map_err(|e| dbg!(e))
+            .unwrap()
     }
 
     #[test]
-    fn should_call_bifrost_iost() {
-        let result = futures::executor::block_on(async move { crate::call().await });
+    fn debug_iost_action() {
+        let result_action: IostAction = serde_json::from_str(TO_IOST).unwrap();
+        dbg!(result_action);
+    }
+
+    #[test]
+    fn it_works() {
+        let memo: String =
+            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY@bifrost:IOST".to_string();
+        let split_memo = memo
+            .as_str()
+            .split(|c| c == '@' || c == ':')
+            .collect::<Vec<_>>();
+        assert_eq!(split_memo.len(), 3);
+
+        let _a = match split_memo[2] {
+            "IOST" => {
+                dbg!("split_memo[2]");
+                ""
+            }
+            _ => "--",
+        };
+    }
+
+    #[test]
+    fn deposit_iost_to_bifrost() {
+        let result = futures::executor::block_on(async move {
+            crate::call(build_client().await, TO_BIFROST, "".as_bytes().to_vec()).await
+        });
+
+        dbg!(result.is_ok());
+    }
+
+    #[test]
+    fn transfer_to_iost() {
+        let result = futures::executor::block_on(async move {
+            crate::call(
+                build_client().await,
+                TO_IOST,
+                "GQxsjgWVKjXcW67ETQyEYEpaM4TH3J933AGefdueezW8"
+                    .as_bytes()
+                    .to_vec(),
+            )
+            .await
+        });
 
         dbg!(result.is_ok());
     }
