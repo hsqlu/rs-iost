@@ -4,7 +4,8 @@ use alloc::vec::Vec;
 
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-// use ed25519_dalek::{Signer, Verifier};
+#[cfg(feature = "std")]
+use ed25519_dalek::{Signer, Verifier};
 #[cfg(feature = "std")]
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]

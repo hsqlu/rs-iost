@@ -22,6 +22,8 @@ serde_json = { version = "1.0.52", default-features = false, optional = true, fe
 sha3 = { version = "0.8.2", default-features = false}
 lite-json = { version = "0.1.0", git = "https://github.com/xlc/lite-json", default-features = false, features = ["float"]}
 
+ed25519-dalek = { version = "1.0.0-pre.3", default-features = false, optional = true, features = ["u64_backend", "alloc"] }
+
 [dev-dependencies]
 tokio = { version = "0.2.6", features = ["macros"] }
 reqwest = { version = "0.10.0", features = ["json", "blocking"] }
@@ -29,7 +31,6 @@ reqwest = { version = "0.10.0", features = ["json", "blocking"] }
 [features]
 default = ["std"]
 std = [
-#"byteorder/std",
     "base58",
     "base64/std",
     "chrono/default",
