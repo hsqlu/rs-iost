@@ -306,7 +306,6 @@ impl Tx {
 #[cfg(test)]
 mod test {
     use super::*;
-    use base58::FromBase58;
 
     #[test]
     fn test_bytes_serialization() {
@@ -336,8 +335,8 @@ mod test {
 
         let mut tx = Tx::from_action(vec![action]);
         // let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
-        let sec_key = "xjggJ3TrLXz7qEwrGG3Rc4Fz59imjixhXpViq9W7Ncx"
-            .from_base58()
+        let sec_key = bs58::decode("xjggJ3TrLXz7qEwrGG3Rc4Fz59imjixhXpViq9W7Ncx")
+            .into_vec()
             .unwrap();
         // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
         tx.sign(
@@ -384,8 +383,9 @@ mod test {
             signers: vec![],
             signatures: vec![],
         };
+
         // let data: Vec<u8> = tx.to_serialize_data().unwrap();
-        let sec_key = "2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1".from_base58().unwrap();
+        let sec_key = bs58::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").into_vec().unwrap();
         // let sec_key = base64::decode("2yquS3ySrGWPEKywCPzX4RTJugqRh7kJSo5aehsLYPEWkUxBWA39oMrZ7ZxuM4fgyXYs2cPwh5n8aNNpH5x2VyK1").unwrap();
         tx.sign("admin".to_string(), algorithm::ED25519, sec_key.as_slice());
         // let s = String::from_utf8(data.clone());

@@ -1,5 +1,5 @@
 // #[cfg(feature = "std")]
-// use base58::{FromBase58, ToBase58};
+
 // use base64;
 // #[cfg(feature = "std")]
 // use serde::{Deserialize, Serialize};

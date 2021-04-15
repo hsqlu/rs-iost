@@ -13,8 +13,8 @@ pub struct Sign {
     pub algorithm: u8,
     pub sig: String,
 
-    #[cfg(feature = "std")]
-    #[serde(rename = "pubKey")]
+    // #[cfg(feature = "std")]
+    // #[serde(rename = "pubKey")]
     pub pub_key: String,
 }
 

@@ -1,5 +1,3 @@
-#[cfg(feature = "std")]
-use base58::{FromBase58, ToBase58};
 use base64;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -47,13 +45,13 @@ impl Block {
     pub(crate) fn verify_self(&self) -> Result<()> {
         let ed25519 = algorithm::new(algorithm::ED25519);
         let sign = base64::decode(self.sign.sig.as_str()).unwrap();
-        let pub_key = self.head.witness.from_base58().unwrap();
+        let pub_key = bs58::decode(self.head.witness.as_str()).into_vec().unwrap();
         let hash = self.head.hash();
 
         if !ed25519.verify(hash.as_slice(), pub_key.as_slice(), sign.as_slice()) {
             return Err(IOSTBlockVerifyError(format!(
                 "The signature of block {} is wrong",
-                "EsoovjyX7ViMkbSs2y8gniJ7WQW33m8jVM8zvuZMKRRU"
+                self.sign.sig
             )));
         }
 

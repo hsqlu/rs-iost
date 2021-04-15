@@ -9,9 +9,9 @@ pub mod amount_limit;
 pub mod bytes;
 
 mod chain_test;
-mod verify;
 
 pub mod spv;
+pub mod verify;
 
 pub mod error;
 pub mod fixed;

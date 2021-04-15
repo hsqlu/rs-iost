@@ -1,11 +1,11 @@
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::convert::{TryFrom, TryInto};
 
 use crate::error::Error::{ErrorEd25519, ErrorSecp256k1};
 use crate::Result;
-#[cfg(feature = "std")]
-use ed25519_dalek::{Signer, Verifier};
+use ed25519_dalek::{Signature, Signer, Verifier};
 #[cfg(feature = "std")]
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]
@@ -39,17 +39,17 @@ pub fn new(algorithm_name: &str) -> Box<dyn Algorithm> {
 
 impl Algorithm for AlgorithmEd25519 {
     fn sign(&self, message: &[u8], sec_key: &[u8]) -> Vec<u8> {
-        // let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
-        // let signature = key_pair.sign(message);
-        // signature.to_bytes().to_vec()
-        unimplemented!()
+        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
+        let signature = key_pair.sign(message);
+        signature.to_bytes().to_vec()
+        // unimplemented!()
     }
 
     fn verify(&self, message: &[u8], pub_key: &[u8], signature: &[u8]) -> bool {
-        // let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
-        // let sig = signature::Signature::from_bytes(signature).unwrap();
-        // public_key.verify(message, &sig).is_ok()
-        unimplemented!()
+        let public_key = ed25519_dalek::PublicKey::from_bytes(pub_key).unwrap();
+        let sig = Signature::try_from(signature).unwrap();
+        public_key.verify(message, &sig).is_ok()
+        // unimplemented!()
     }
 
     #[cfg(feature = "std")]
@@ -61,9 +61,9 @@ impl Algorithm for AlgorithmEd25519 {
     }
 
     fn get_pub_key(&self, sec_key: &[u8]) -> crate::Result<Vec<u8>> {
-        // let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
-        // Ok(Vec::from(key_pair.public.as_ref()))
-        unimplemented!()
+        let key_pair = ed25519_dalek::Keypair::from_bytes(sec_key).unwrap();
+        Ok(Vec::from(key_pair.public.as_ref()))
+        // unimplemented!()
     }
 
     fn check(&self, sec_key: &[u8]) -> crate::Result<()> {
@@ -108,7 +108,6 @@ impl Algorithm for AlgorithmSecp256k1 {
 #[cfg(test)]
 mod test {
     use super::*;
-    use base58::{FromBase58, ToBase58};
     use base64;
 
     #[test]
@@ -121,9 +120,9 @@ mod test {
         let ed25519 = super::new(ED25519);
 
         for (hashed_code, expected) in cases {
-            let sk = hashed_code.from_base58().unwrap();
+            let sk = bs58::decode(hashed_code).into_vec().unwrap();
             let pub_key = ed25519.get_pub_key(sk.as_ref()).unwrap();
-            let result = pub_key.to_base58();
+            let result = bs58::encode(pub_key).into_string();
             assert_eq!(result, expected.to_string());
         }
         let encoded_sk = base64::decode("gkpobuI3gbFGstgfdymLBQAGR67ulguDzNmLXEJSWaGUNL5J0z5qJUdsPJdqm+uyDIrEWD2Ym4dY9lv8g0FFZg==").unwrap();
@@ -134,11 +133,11 @@ mod test {
         );
         let secp256k1 = super::new(SECP256K1);
 
-        let sk = "3BZ3HWs2nWucCCvLp7FRFv1K7RR3fAjjEQccf9EJrTv4"
-            .from_base58()
+        let sk = bs58::decode("3BZ3HWs2nWucCCvLp7FRFv1K7RR3fAjjEQccf9EJrTv4")
+            .into_vec()
             .unwrap();
         let pub_key = secp256k1.get_pub_key(sk.as_ref()).unwrap();
-        let result = pub_key.to_base58();
+        let result = bs58::encode(pub_key).into_string();
         assert_eq!(
             "iWgLQj3VTPN4dZnomuJMMCggv22LFw4nAkA6bmrVsmCo".to_string(),
             result

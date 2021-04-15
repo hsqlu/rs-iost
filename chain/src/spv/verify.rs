@@ -13,7 +13,6 @@ use super::{Block, Head, VERIFIER_NUM, VOTE_INTERVAL};
 
 #[derive(Debug, Default)]
 pub struct Verify {
-    current_producer: Vec<String>,
     epoch_producer: BTreeMap<i64, Vec<String>>,
 }
 
@@ -42,7 +41,7 @@ impl Verify {
     #[cfg(feature = "std")]
     pub fn update_epoch(&mut self, block: &Block, block_list: Vec<Block>) -> Result<()> {
         let head: Head = block.head.clone();
-        let mut vote_block_number = head.number;
+        let vote_block_number = head.number;
         if vote_block_number % VOTE_INTERVAL != 0 {
             return Err(IOSTUpdateEpochError(format!(
                 "invalid spv start block {}",
@@ -95,7 +94,6 @@ pub fn init(block: &Block) -> Result<Verify> {
             }
 
             let mut v = Verify {
-                current_producer: witness_status.pending_list.clone(),
                 epoch_producer: BTreeMap::new(),
             };
             v.epoch_producer
@@ -175,7 +173,7 @@ pub fn check_witness(v: &Verify, block: &Block, witness_blocks: Vec<Block>) -> R
 
                 match valid_witness.get(&b.head.witness) {
                     None => {
-                        for produce in v.current_producer.iter() {
+                        for produce in pending_list.iter() {
                             if produce.eq(&b.head.witness) {
                                 valid_witness.insert(produce.to_string(), true);
                                 valid_witness_count = valid_witness_count + 1;
