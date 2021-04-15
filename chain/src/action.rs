@@ -137,7 +137,7 @@ impl IostAction {
         IostAction::from_str("token.iost", "transfer", action_transfer)
     }
 
-    pub fn from_shadow_action(shadow_action: ShadowAction) -> IostAction {
+    pub fn from_shadow_action(shadow_action: Action) -> IostAction {
         IostAction {
             contract: shadow_action.contract.into_bytes(),
             action_name: shadow_action.action_name.into_bytes(),
@@ -146,7 +146,7 @@ impl IostAction {
     }
 
     pub fn no_std_serialize(&self) -> JsonValue {
-        let shadow_action = ShadowAction::from_action(self).unwrap();
+        let shadow_action = Action::from_action(self).unwrap();
         let object = JsonValue::Object(vec![
             (
                 "contract".chars().collect::<Vec<_>>(),
@@ -182,7 +182,7 @@ impl core::fmt::Display for IostAction {
 
 impl Write for IostAction {
     fn write(&self, bytes: &mut [u8], pos: &mut usize) -> Result<(), WriteError> {
-        let shadow_action = ShadowAction::from_action(self).unwrap();
+        let shadow_action = Action::from_action(self).unwrap();
         shadow_action
             .write(bytes, pos)
             .map_err(crate::Error::BytesWriteError);
@@ -192,14 +192,14 @@ impl Write for IostAction {
 
 impl Read for IostAction {
     fn read(bytes: &[u8], pos: &mut usize) -> Result<Self, ReadError> {
-        let shadow_action: ShadowAction = ShadowAction::read(bytes, pos)?;
+        let shadow_action: Action = Action::read(bytes, pos)?;
         Ok(IostAction::from_shadow_action(shadow_action))
     }
 }
 
 impl NumberBytes for IostAction {
     fn num_bytes(&self) -> usize {
-        let shadow_action = ShadowAction::from_action(self).unwrap();
+        let shadow_action = Action::from_action(self).unwrap();
         shadow_action.num_bytes()
     }
 }
@@ -252,20 +252,22 @@ impl ActionTransfer {
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Read, Write, NumberBytes, SerializeData)]
-#[cfg_attr(feature = "std", derive(SerSerialize))]
+#[cfg_attr(feature = "std", derive(SerSerialize, Deserialize))]
 #[iost_root_path = "crate"]
-pub struct ShadowAction {
+pub struct Action {
     /// contract name
     pub contract: String,
     /// function name of the contract
+    // #[cfg(feature = "std")]
+    // #[serde(rename = "actionName")]
     pub action_name: String,
     /// Specific parameters of the call. Put every parameter in an array, and JSON-serialize this array. It may looks like ["a_string", 13]
     pub data: String,
 }
 
-impl ShadowAction {
-    fn from_action(action: &IostAction) -> crate::Result<ShadowAction> {
-        Ok(ShadowAction {
+impl Action {
+    fn from_action(action: &IostAction) -> crate::Result<Action> {
+        Ok(Action {
             contract: String::from_utf8(action.contract.clone()).unwrap(),
             action_name: String::from_utf8(action.action_name.clone()).unwrap(),
             data: String::from_utf8(action.data.clone()).unwrap(),
@@ -318,13 +320,13 @@ mod test {
         };
         let data = action.to_serialize_data().unwrap();
 
-        let sa = ShadowAction {
+        let sa = Action {
             contract: "iost".to_string(),
             action_name: "iost".to_string(),
             data: "".to_string(),
         };
         let sa_data = sa.to_serialize_data().unwrap();
-        let d_sa = ShadowAction::read(&sa_data, &mut 0).unwrap();
+        let d_sa = Action::read(&sa_data, &mut 0).unwrap();
         assert_eq!(data.num_bytes(), sa_data.num_bytes());
         assert_eq!(hex::encode(data), hex::encode(sa_data));
         let other = IostAction {
@@ -334,7 +336,7 @@ mod test {
         };
         let mut d = other.to_serialize_data().unwrap();
         let a = IostAction::read(d.as_ref(), &mut 0).unwrap();
-        let s_a = ShadowAction::from_action(&a);
+        let s_a = Action::from_action(&a);
         assert!(s_a.is_ok());
     }
 
