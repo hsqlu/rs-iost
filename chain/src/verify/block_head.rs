@@ -132,4 +132,23 @@ mod test {
     fn base64_decode(s: &str) -> Vec<u8> {
         return s.as_bytes().to_vec();
     }
+
+    #[test]
+    fn test_base64_decode() -> () {
+        let input = "qy5kSuCpYMQ+MFo0NZ4v29j9vjg7rqp5Mgw6ui/Fg/I=";
+        // let input = "75xEVVZQRiqxozORz0DZ4OAG9VKCKSEpc2LhgsSUKZ4=";
+        let res = base64::decode(input).unwrap();
+        let r2 = bs58::encode(res).into_string();
+        // let result = core::str::from_utf8(res.as_slice()).unwrap().to_string();
+        dbg!(r2);
+
+        let x = "CXDkEdeKQArGf6HUwzDdz7gvtBWapDwqcMsXRgcB1oUV";
+
+        let re = bs58::decode(x).into_vec().unwrap();
+        dbg!(re);
+
+        // let sec_key = bs58::decode("xjggJ3TrLXz7qEwrGG3Rc4Fz59imjixhXpViq9W7Ncx")
+        //     .into_vec()
+        //     .unwrap();
+    }
 }
