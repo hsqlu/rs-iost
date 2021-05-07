@@ -10,7 +10,7 @@ bs58 = { version = "0.3.0", default-features = false, features = ["alloc"] }
 base64 = { version = "0.12.3", default-features = false, features= ["alloc"] }
 byteorder = { version = "1.3.2", default-features = false }
 chrono = { version = "0.4.10", default-features = false }
-crypto = { version = "0.0.2", default-features = false }
+#crypto = { version = "0.0.2", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
 digest = { version = "0.8.1", default-features = false }
 hex = { version = "0.4", default-features = false }
