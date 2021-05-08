@@ -1,12 +1,13 @@
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
+
 use base64;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 
-use alloc::collections::BTreeMap;
-use alloc::format;
-use alloc::string::String;
-use alloc::vec::Vec;
 use keys::algorithm;
 
 use crate::spv::{Head, Sign, Tx};

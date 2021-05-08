@@ -1,12 +1,13 @@
-pub mod block_head;
-
-pub use self::block_head::*;
+use alloc::format;
+use alloc::vec::Vec;
 
 use crate::spv::VOTE_INTERVAL;
 use crate::Error::{IOSTBlockWitnessError, IOSTInvalidBlockSignature};
 use crate::Result;
-use alloc::format;
-use alloc::vec::Vec;
+
+pub use self::block_head::*;
+
+pub mod block_head;
 
 // pub fn check_witness(block: &BlockHead, witness_blocks: Vec<BlockHead>) -> Result<()> {
 //     if let Err(_) = block.verify_self() {

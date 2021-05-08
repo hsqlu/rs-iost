@@ -2,10 +2,11 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 
-use crate::{NumberBytes, Read, SerializeData, Write};
 use lite_json::JsonValue;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+
+use crate::{NumberBytes, Read, SerializeData, Write};
 
 #[derive(Clone, Default, Debug, NumberBytes, Write, Read, SerializeData)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]

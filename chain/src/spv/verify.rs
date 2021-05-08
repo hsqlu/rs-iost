@@ -1,10 +1,10 @@
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
 use alloc::collections::BTreeMap;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::{vec, vec::Vec};
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 use crate::Error::*;
 use crate::Result;

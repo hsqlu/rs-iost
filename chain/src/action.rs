@@ -1,11 +1,9 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use alloc::{format, vec};
-
-use crate::Error::JsonParserError;
-use crate::{AccountName, Error, NumberBytes, Read, ReadError, SerializeData, Write, WriteError};
-use codec::{Decode, Encode};
 use core::str::FromStr;
+
+use codec::{Decode, Encode};
 use lite_json::{JsonValue, Serialize};
 #[cfg(feature = "std")]
 use serde::{
@@ -14,6 +12,9 @@ use serde::{
 };
 #[cfg(feature = "std")]
 use serde_json::to_string as json_to_string;
+
+use crate::Error::JsonParserError;
+use crate::{AccountName, Error, NumberBytes, Read, ReadError, SerializeData, Write, WriteError};
 
 #[derive(Clone, Default, Debug, PartialEq, Encode, Decode, SerializeData)]
 #[iost_root_path = "crate"]
@@ -307,9 +308,11 @@ impl FromStr for IostAction {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use core::iter::FromIterator;
+
     use lite_json::parse_json;
+
+    use super::*;
 
     #[test]
     fn test_action() {

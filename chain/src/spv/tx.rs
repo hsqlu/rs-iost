@@ -1,8 +1,8 @@
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 use crate::signature::Signature;
 use crate::{Action, AmountLimit};

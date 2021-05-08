@@ -5,7 +5,6 @@ extern crate alloc;
 pub mod abi;
 pub mod action;
 pub mod amount_limit;
-// pub mod block;
 pub mod bytes;
 
 mod chain_test;
@@ -14,7 +13,6 @@ pub mod spv;
 pub mod verify;
 
 pub mod error;
-pub mod fixed;
 pub mod frozen_balance;
 pub mod group;
 pub mod info;
@@ -44,10 +42,10 @@ mod get_chain_info;
 pub use iost_derive::*;
 
 pub use self::{
-    abi::*, action::*, amount_limit::*, bytes::*, error::*, fixed::*, frozen_balance::*, group::*,
-    info::*, item::*, key_field::*, message::*, names::*, net_work_info::*, permission::*,
-    pledge_info::*, ram_info::*, receipts::*, signature::*, status::*, status_code::*,
-    transaction::*, tx::*, tx_receipt::*, tx_response::*, unsigned_int::*, vote_info::*,
+    abi::*, action::*, amount_limit::*, bytes::*, error::*, frozen_balance::*, group::*, info::*,
+    item::*, key_field::*, message::*, names::*, net_work_info::*, permission::*, pledge_info::*,
+    ram_info::*, receipts::*, signature::*, status::*, status_code::*, transaction::*, tx::*,
+    tx_receipt::*, tx_response::*, unsigned_int::*, vote_info::*,
 };
 
 use alloc::vec;

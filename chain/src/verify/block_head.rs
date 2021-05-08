@@ -8,11 +8,13 @@ use core::str::from_utf8;
 use keys::algorithm;
 use keys::algorithm::Algorithm;
 
+use super::super::{NumberBytes, Read, SerializeData, Write};
 use crate::spv::{Head, Sign};
 use crate::Error::IOSTBlockVerifyError;
 use crate::Result;
 
-#[derive(Debug, Clone, PartialEq, Encode, Decode)]
+#[derive(Clone, Debug, NumberBytes, PartialEq, Default, Encode, Decode)]
+#[iost_root_path = "crate"]
 pub struct BlockHead {
     pub version: i64,
 

@@ -1,15 +1,16 @@
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
 use base64;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Deserializer, Serialize};
 use sha3::{Digest, Sha3_256};
 
-use alloc::string::{String, ToString};
-use alloc::vec::Vec;
+use keys::algorithm;
 
 use crate::spv::Sign;
 use crate::verify::BlockHead;
 use crate::{NumberBytes, Read, SerializeData, Write};
-use keys::algorithm;
 
 #[derive(Debug, Clone, NumberBytes, SerializeData, Write, Read)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
